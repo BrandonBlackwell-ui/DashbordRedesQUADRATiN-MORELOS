@@ -3,7 +3,8 @@ import { qm_data } from './data';
 import { qm_analysis } from './analysis';
 import { supabase } from './supabase';
 import {
-  LineChart,
+  ComposedChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -407,7 +408,7 @@ function App() {
           </div>
         </section>
 
-        {/* Charts & Table - Histórico de Crecimiento */}
+        {/* Histórico de Crecimiento — Gráfica */}
         <section className="mb-10">
 
           {/* Section Header */}
@@ -417,142 +418,157 @@ function App() {
                 <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
                 Histórico de Crecimiento — Quadratín Morelos
               </h2>
-              <p className="text-slate-400 text-xs mt-0.5 ml-4">Enero – Mayo 2026 · Metas: Marzo – Mayo</p>
+              <p className="text-slate-400 text-xs mt-0.5 ml-4">Enero – Mayo 2026 · ● Real · ■ Meta (marzo–mayo)
+              </p>
             </div>
+
             {/* Tab Selector */}
             <div className="sub-tabs-container">
               <button onClick={() => setSelectedChartTab('consolidado')} className={`sub-tab-btn ${selectedChartTab === 'consolidado' ? 'active' : ''}`}>Consolidado</button>
-              <button onClick={() => setSelectedChartTab('facebook')} className={`sub-tab-btn ${selectedChartTab === 'facebook' ? 'active' : ''}`}>Facebook</button>
-              <button onClick={() => setSelectedChartTab('instagram')} className={`sub-tab-btn ${selectedChartTab === 'instagram' ? 'active' : ''}`}>Instagram</button>
-              <button onClick={() => setSelectedChartTab('twitter')} className={`sub-tab-btn ${selectedChartTab === 'twitter' ? 'active' : ''}`}>X/Twitter</button>
-              <button onClick={() => setSelectedChartTab('tiktok')} className={`sub-tab-btn ${selectedChartTab === 'tiktok' ? 'active' : ''}`}>TikTok</button>
+              <button onClick={() => setSelectedChartTab('facebook')}    className={`sub-tab-btn ${selectedChartTab === 'facebook'    ? 'active' : ''}`}>Facebook</button>
+              <button onClick={() => setSelectedChartTab('instagram')}   className={`sub-tab-btn ${selectedChartTab === 'instagram'   ? 'active' : ''}`}>Instagram</button>
+              <button onClick={() => setSelectedChartTab('twitter')}     className={`sub-tab-btn ${selectedChartTab === 'twitter'     ? 'active' : ''}`}>X/Twitter</button>
+              <button onClick={() => setSelectedChartTab('tiktok')}      className={`sub-tab-btn ${selectedChartTab === 'tiktok'      ? 'active' : ''}`}>TikTok</button>
             </div>
           </div>
 
-          {/* Data Table */}
-          <div className="corp-card mb-6 overflow-x-auto">
-            <table className="w-full text-xs border-collapse" style={{ minWidth: '760px' }}>
-              <thead>
-                <tr>
-                  <th className="hist-th hist-th-dark" style={{ width: '100px' }}>Red Social</th>
-                  <th className="hist-th hist-th-dark">Cuenta</th>
-                  <th className="hist-th hist-th-dark">1 Ene<br/>(inicio)</th>
-                  {/* Enero - Febrero */}
-                  <th className="hist-th hist-th-blue" colSpan={2}>Enero – Febrero</th>
-                  {/* Marzo */}
-                  <th className="hist-th hist-th-green" colSpan={2}>Marzo</th>
-                  {/* Abril */}
-                  <th className="hist-th hist-th-orange" colSpan={2}>Abril</th>
-                  {/* Mayo */}
-                  <th className="hist-th hist-th-yellow" colSpan={2}>Mayo</th>
-                  <th className="hist-th hist-th-dark">Crec.<br/>total %</th>
-                </tr>
-                <tr>
-                  <th className="hist-th-sub"></th>
-                  <th className="hist-th-sub"></th>
-                  <th className="hist-th-sub"></th>
-                  <th className="hist-th-sub hist-th-blue-light">Enero</th>
-                  <th className="hist-th-sub hist-th-blue-light">Febrero</th>
-                  <th className="hist-th-sub hist-th-green-light">Meta</th>
-                  <th className="hist-th-sub hist-th-green-light">Cierre</th>
-                  <th className="hist-th-sub hist-th-orange-light">Meta</th>
-                  <th className="hist-th-sub hist-th-orange-light">Cierre</th>
-                  <th className="hist-th-sub hist-th-yellow-light">Meta</th>
-                  <th className="hist-th-sub hist-th-yellow-light">Cierre</th>
-                  <th className="hist-th-sub"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableRows.map(row => {
-                  const inicio = row.inicio;
-                  const cierreMayo = monthly_real.mayo[row.key];
-                  const growthPct = cierreMayo != null && inicio > 0
-                    ? (((cierreMayo - inicio) / inicio) * 100).toFixed(1)
-                    : null;
-                  const isPositive = growthPct > 0;
-                  return (
-                    <tr key={row.key} className="hist-tr">
-                      <td className="hist-td">
-                        <span className="hist-platform-badge" style={{ backgroundColor: row.color }}>{row.label}</span>
-                      </td>
-                      <td className="hist-td text-slate-600 font-medium">{row.account}</td>
-                      <td className="hist-td font-bold text-slate-800">{formatNumber(inicio)}</td>
-                      {/* Ene */}
-                      <td className="hist-td hist-cell-blue">{formatNumber(monthly_real.enero[row.key])}</td>
-                      {/* Feb */}
-                      <td className="hist-td hist-cell-blue">{formatNumber(monthly_real.febrero[row.key])}</td>
-                      {/* Mar meta */}
-                      <td className="hist-td hist-cell-green-light">{formatNumber(monthly_goals.marzo[row.key])}</td>
-                      {/* Mar real */}
-                      <td className="hist-td hist-cell-green font-bold">{formatNumber(monthly_real.marzo[row.key])}</td>
-                      {/* Abr meta */}
-                      <td className="hist-td hist-cell-orange-light">{formatNumber(monthly_goals.abril[row.key])}</td>
-                      {/* Abr real */}
-                      <td className="hist-td hist-cell-orange font-bold">{formatNumber(monthly_real.abril[row.key])}</td>
-                      {/* May meta */}
-                      <td className="hist-td hist-cell-yellow-light">{formatNumber(monthly_goals.mayo[row.key])}</td>
-                      {/* May real */}
-                      <td className="hist-td hist-cell-yellow font-bold">{formatNumber(monthly_real.mayo[row.key])}</td>
-                      {/* Growth */}
-                      <td className="hist-td text-center">
-                        {growthPct != null ? (
-                          <span className={`hist-growth-badge ${isPositive ? 'positive' : 'negative'}`}>
-                            {isPositive ? '+' : ''}{growthPct}%
-                          </span>
-                        ) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Line Chart: Real vs Meta */}
+          {/* Chart Card */}
           <div className="corp-card">
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-[#003366] font-outfit">
-                {selectedChartTab === 'consolidado' ? 'Consolidado total — Real vs Meta' : `${platforms[selectedChartTab]?.name || selectedChartTab} — Real vs Meta`}
-              </h3>
-              <p className="text-slate-400 text-xs mt-0.5">Línea sólida = seguidores reales · Línea punteada = meta mensual</p>
-            </div>
-            <div className="h-72 w-full">
+            {/* Mini stat bar above chart */}
+            {selectedChartTab !== 'consolidado' && (() => {
+              const p = platforms[selectedChartTab];
+              const growth = p ? p.current - p.initial : 0;
+              const growthPct = p && p.initial > 0 ? ((growth / p.initial) * 100).toFixed(1) : '0';
+              const goalPct   = p && p.goal  > 0 ? ((p.current / p.goal) * 100).toFixed(1) : '0';
+              const isOver    = p && p.current >= p.goal;
+              return (
+                <div className="flex flex-wrap gap-4 mb-5 pb-4 border-b border-slate-100">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Seguidores actuales</span>
+                    <span className="text-2xl font-extrabold font-outfit" style={{ color: p?.color || '#003366' }}>
+                      {p ? formatNumber(p.current) : '—'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Crecimiento neto</span>
+                    <span className="text-xl font-bold text-emerald-600">+{formatNumber(growth)} ({growthPct > 0 ? '+' : ''}{growthPct}%)</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Meta mayo ({formatNumber(p?.goal)})</span>
+                    <span className={`text-xl font-bold ${isOver ? 'text-emerald-600' : 'text-[#003366]'}`}>
+                      {goalPct}% {isOver ? '✓ Superada' : ''}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Recharts Composed Chart */}
+            <div className="h-96 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={currentChartData} margin={{ top: 10, right: 24, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="label" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false}
+                <ComposedChart
+                  data={currentChartData}
+                  margin={{ top: 16, right: 28, left: -4, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"
+                        stopColor={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
+                        stopOpacity={0.25}
+                      />
+                      <stop offset="95%"
+                        stopColor={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+
+                  <XAxis
+                    dataKey="label"
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={6}
+                  />
+                  <YAxis
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
                   />
+
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#003366', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderColor: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366'),
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+                      padding: '10px 14px'
+                    }}
+                    itemStyle={{ color: '#374151', fontWeight: 600 }}
+                    labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
                     formatter={(value, name) => [
                       value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
-                      name === 'real' ? 'Real' : 'Meta'
+                      name === 'real' ? '🟢 Seguidores Reales' : '■ Meta Mensual'
                     ]}
                   />
+
                   <Legend
-                    formatter={(value) => value === 'real' ? 'Seguidores Reales' : 'Meta Mensual'}
-                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                    formatter={(value) =>
+                      value === 'real'
+                        ? <span style={{ color: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366'), fontWeight: 700, fontSize: '11px' }}>&#9679; Seguidores Reales</span>
+                        : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>- - Meta Mensual</span>
+                    }
+                    wrapperStyle={{ paddingTop: '10px' }}
                   />
-                  <Line
-                    type="monotone" dataKey="real" name="real"
+
+                  {/* Colored Area — Real */}
+                  <Area
+                    type="monotone"
+                    dataKey="real"
+                    name="real"
                     stroke={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
-                    strokeWidth={2.5} dot={{ r: 4, fill: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366') }}
-                    connectNulls={true} animationDuration={800}
+                    strokeWidth={2.5}
+                    fill="url(#realGradient)"
+                    fillOpacity={1}
+                    dot={{
+                      r: 5,
+                      fill: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366'),
+                      stroke: '#ffffff',
+                      strokeWidth: 2
+                    }}
+                    activeDot={{ r: 7, strokeWidth: 2, stroke: '#ffffff' }}
+                    connectNulls={true}
+                    animationDuration={900}
                   />
+
+                  {/* Gray dashed Line — Meta */}
                   <Line
-                    type="monotone" dataKey="meta" name="meta"
-                    stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 4"
-                    dot={{ r: 3, fill: '#94a3b8' }}
-                    connectNulls={true} animationDuration={800}
+                    type="monotone"
+                    dataKey="meta"
+                    name="meta"
+                    stroke="#94a3b8"
+                    strokeWidth={1.8}
+                    strokeDasharray="6 4"
+                    dot={{ r: 4, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
+                    activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2 }}
+                    connectNulls={true}
+                    animationDuration={900}
                   />
-                </LineChart>
+
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-3 text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center gap-1.5">
+
+            {/* Footer note */}
+            <div className="mt-4 text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center gap-1.5">
               <Calendar size={12} className="text-[#003366]" />
-              Datos obtenidos del PDF oficial (ene–may 2026) y medición automática diaria a las 7:00 AM. Metas disponibles desde marzo.
+              Datos del PDF oficial (ene–may 2026) y scraping automático diario 7 AM. Metas disponibles desde marzo.
             </div>
           </div>
         </section>
