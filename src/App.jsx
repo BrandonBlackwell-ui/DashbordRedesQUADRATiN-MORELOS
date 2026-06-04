@@ -3,13 +3,15 @@ import { qm_data } from './data';
 import { qm_analysis } from './analysis';
 import { supabase } from './supabase';
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid
+  CartesianGrid,
+  Legend,
+  ReferenceLine
 } from 'recharts';
 import {
   TrendingUp,
@@ -69,15 +71,18 @@ function App() {
   // Extract history and configurations from data
   const history = qm_data.history;
   const goals = qm_data.goals;
-  
+  const monthly_goals = qm_data.monthly_goals;
+  const monthly_real = qm_data.monthly_real;
+
+  // Last entry with full data for totals (skip youtube-only gaps)
   const lastEntry = history[history.length - 1];
-  const initialEntry = history[0]; // Jan 9
-  
+  const initialEntry = history[0]; // 1 Jan
+
   // Platform configuration objects
   const platforms = {
     instagram: {
       name: 'Instagram',
-      color: '#e1306c', // official Instagram branding color
+      color: '#e1306c',
       logo: InstagramLogo,
       initial: initialEntry.instagram,
       current: lastEntry.instagram,
@@ -86,7 +91,7 @@ function App() {
     },
     tiktok: {
       name: 'TikTok',
-      color: '#010101', // official black
+      color: '#ee1d52',
       logo: TikTokLogo,
       initial: initialEntry.tiktok,
       current: lastEntry.tiktok,
@@ -95,7 +100,7 @@ function App() {
     },
     facebook: {
       name: 'Facebook',
-      color: '#1877f2', // official Facebook blue
+      color: '#1877f2',
       logo: FacebookLogo,
       initial: initialEntry.facebook,
       current: lastEntry.facebook,
@@ -104,7 +109,7 @@ function App() {
     },
     twitter: {
       name: 'Twitter / X',
-      color: '#000000', // official X black
+      color: '#1d9bf0',
       logo: TwitterXLogo,
       initial: initialEntry.twitter,
       current: lastEntry.twitter,
@@ -115,7 +120,7 @@ function App() {
 
   // Format date helper in Spanish
   const formatDateSpanish = (dateStr) => {
-    const dateObj = new Date(dateStr + 'T12:00:00'); // avoid timezone offset issues
+    const dateObj = new Date(dateStr + 'T12:00:00');
     return dateObj.toLocaleDateString('es-MX', {
       weekday: 'long',
       year: 'numeric',
@@ -136,11 +141,10 @@ function App() {
     return `Cuernavaca, Morelos a ${day} de ${month} de ${year}`;
   };
 
-  // Helper formatting functions
-  const formatNumber = (num) => new Intl.NumberFormat('es-MX').format(num);
+  const formatNumber = (num) => num == null ? '—' : new Intl.NumberFormat('es-MX').format(num);
   const formatPercentage = (val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
 
-  // Calculate totals
+  // Totals using last entry
   const initialTotal = initialEntry.instagram + initialEntry.tiktok + initialEntry.facebook + initialEntry.twitter;
   const currentTotal = lastEntry.instagram + lastEntry.tiktok + lastEntry.facebook + lastEntry.twitter;
   const totalGoal = goals.instagram + goals.tiktok + goals.facebook + goals.twitter;
@@ -148,22 +152,53 @@ function App() {
   const totalGrowthPercentage = (totalGrowth / initialTotal) * 100;
   const totalProgress = (currentTotal / totalGoal) * 100;
 
-  // Chart data mapping
-  const chartData = history.map(entry => {
-    const dateObj = new Date(entry.date + 'T12:00:00');
-    const formattedDate = dateObj.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
-    return {
-      date: formattedDate,
-      fullDate: entry.date,
-      instagram: entry.instagram,
-      tiktok: entry.tiktok,
-      facebook: entry.facebook,
-      twitter: entry.twitter,
-      total: entry.instagram + entry.tiktok + entry.facebook + entry.twitter
-    };
-  });
+  // Build chart data for the multi-line chart
+  // Each point = one month label, has real + goal values per platform
+  const chartMonths = [
+    { label: '1 Ene', real: { facebook: 78000, instagram: 1692, twitter: 10500, tiktok: 1893 }, goal: null },
+    { label: 'Cierre Ene', real: { facebook: 77890, instagram: null, twitter: null, tiktok: 1893 }, goal: null },
+    { label: 'Cierre Feb', real: { facebook: 78825, instagram: null, twitter: null, tiktok: 2010 }, goal: null },
+    { label: 'Marzo', real: { facebook: 80479, instagram: 3936, twitter: 10584, tiktok: 2116 }, goal: { facebook: 93500, instagram: 4500, twitter: 12933, tiktok: 2500 } },
+    { label: 'Abril', real: { facebook: 81025, instagram: 11904, twitter: 10603, tiktok: 5638 }, goal: { facebook: 109000, instagram: 9000, twitter: 15289, tiktok: 5000 } },
+    { label: 'Mayo', real: { facebook: 81024, instagram: 19917, twitter: 10628, tiktok: 5794 }, goal: { facebook: 84000, instagram: 13500, twitter: 15200, tiktok: 7500 } },
+    { label: 'Hoy', real: { facebook: 81097, instagram: 20583, twitter: 10635, tiktok: 5854 }, goal: null },
+  ];
+
+  // Flatten chart data for recharts
+  const buildChartData = (platform) =>
+    chartMonths.map(m => ({
+      label: m.label,
+      real: m.real[platform] ?? null,
+      meta: m.goal ? m.goal[platform] : null,
+    }));
+
+  const consolidadoChartData = chartMonths.map(m => ({
+    label: m.label,
+    real: m.real.facebook + (m.real.instagram ?? 0) + (m.real.twitter ?? 0) + (m.real.tiktok ?? 0),
+    meta: m.goal ? m.goal.facebook + m.goal.instagram + m.goal.twitter + m.goal.tiktok : null,
+  }));
+
+  const currentChartData = selectedChartTab === 'consolidado'
+    ? consolidadoChartData
+    : buildChartData(selectedChartTab);
 
   const activeNotes = qm_analysis[activeReportTab];
+
+  // Table config
+  const tableRows = [
+    { key: 'facebook', label: 'FACEBOOK', color: '#1877f2', bg: '#e7f0fd', account: 'Quadratín Morelos', inicio: 78000 },
+    { key: 'instagram', label: 'INSTAGRAM', color: '#e1306c', bg: '#fce8f1', account: '@quadratin.morelos', inicio: 1692 },
+    { key: 'twitter', label: 'X / TWITTER', color: '#1d9bf0', bg: '#e7f5fe', account: '@Quadratin_Mor', inicio: 10500 },
+    { key: 'youtube', label: 'YOUTUBE', color: '#ff0000', bg: '#ffe5e5', account: 'Quadratín Morelos', inicio: 216 },
+    { key: 'tiktok', label: 'TIKTOK', color: '#010101', bg: '#f0f0f0', account: '@quadratin.morelos', inicio: 1893 },
+  ];
+  const tableMonths = [
+    { key: 'enero', label: 'Enero', hasGoal: false },
+    { key: 'febrero', label: 'Febrero', hasGoal: false },
+    { key: 'marzo', label: 'Marzo', hasGoal: true },
+    { key: 'abril', label: 'Abril', hasGoal: true },
+    { key: 'mayo', label: 'Mayo', hasGoal: true },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-slate-100 font-sans antialiased overflow-x-hidden">
@@ -372,115 +407,154 @@ function App() {
           </div>
         </section>
 
-        {/* Charts & Pipeline Info */}
-        <section className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Main Chart Card (span 3) */}
-          <div className="lg:col-span-3 corp-card">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-lg font-bold font-outfit text-[#003366]">Histórico de Crecimiento</h2>
-                <p className="text-slate-400 text-xs mt-0.5">Evolución de seguidores registrados.</p>
-              </div>
-              
-              {/* Tab Selector */}
-              <div className="sub-tabs-container">
-                <button 
-                  onClick={() => setSelectedChartTab('consolidado')}
-                  className={`sub-tab-btn ${selectedChartTab === 'consolidado' ? 'active' : ''}`}
-                >
-                  Consolidado
-                </button>
-                {Object.entries(platforms).map(([key, item]) => (
-                  <button 
-                    key={key}
-                    onClick={() => setSelectedChartTab(key)}
-                    className={`sub-tab-btn ${selectedChartTab === key ? 'active' : ''}`}
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Charts & Table - Histórico de Crecimiento */}
+        <section className="mb-10">
 
-            {/* Recharts Container */}
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop 
-                        offset="5%" 
-                        stopColor={selectedChartTab === 'consolidado' ? '#ff6600' : platforms[selectedChartTab].color} 
-                        stopOpacity={0.2} 
-                      />
-                      <stop 
-                        offset="95%" 
-                        stopColor={selectedChartTab === 'consolidado' ? '#ff6600' : platforms[selectedChartTab].color} 
-                        stopOpacity={0} 
-                      />
-                    </linearGradient>
-                  </defs>
-                  
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#6b7280" 
-                    fontSize={11} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="#6b7280" 
-                    fontSize={11} 
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
-                  />
-                  
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#ffffff', 
-                      borderColor: selectedChartTab === 'consolidado' ? '#ff6600' : '#003366',
-                      borderRadius: '8px',
-                      color: '#1f2937',
-                      fontSize: '13px',
-                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)'
-                    }} 
-                    itemStyle={{ color: '#1f2937' }}
-                    labelStyle={{ color: '#6b7280', fontWeight: 'bold' }}
-                    formatter={(value) => [formatNumber(value), selectedChartTab === 'consolidado' ? 'Seguidores Totales' : `Seguidores en ${platforms[selectedChartTab].name}`]}
-                    labelFormatter={(label, items) => {
-                      const entry = items[0]?.payload;
-                      return entry ? `Fecha de registro: ${entry.fullDate}` : label;
-                    }}
-                  />
-
-                  <Area 
-                    type="monotone" 
-                    dataKey={selectedChartTab === 'consolidado' ? 'total' : selectedChartTab} 
-                    stroke={selectedChartTab === 'consolidado' ? '#ff6600' : platforms[selectedChartTab].color} 
-                    strokeWidth={3} 
-                    fillOpacity={1} 
-                    fill="url(#colorGradient)" 
-                    animationDuration={800}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+          {/* Section Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
+                Histórico de Crecimiento — Quadratín Morelos
+              </h2>
+              <p className="text-slate-400 text-xs mt-0.5 ml-4">Enero – Mayo 2026 · Metas: Marzo – Mayo</p>
             </div>
-            
-            {/* Explanatory subtitle */}
-            <div className="mt-4 text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center gap-1.5">
-              <Calendar size={12} className="text-[#003366]" />
-              Los puntos representan las fechas clave del reporte (9 de enero y 9 de mayo) complementados con las mediciones automáticas diarias a las 7:00 AM.
+            {/* Tab Selector */}
+            <div className="sub-tabs-container">
+              <button onClick={() => setSelectedChartTab('consolidado')} className={`sub-tab-btn ${selectedChartTab === 'consolidado' ? 'active' : ''}`}>Consolidado</button>
+              <button onClick={() => setSelectedChartTab('facebook')} className={`sub-tab-btn ${selectedChartTab === 'facebook' ? 'active' : ''}`}>Facebook</button>
+              <button onClick={() => setSelectedChartTab('instagram')} className={`sub-tab-btn ${selectedChartTab === 'instagram' ? 'active' : ''}`}>Instagram</button>
+              <button onClick={() => setSelectedChartTab('twitter')} className={`sub-tab-btn ${selectedChartTab === 'twitter' ? 'active' : ''}`}>X/Twitter</button>
+              <button onClick={() => setSelectedChartTab('tiktok')} className={`sub-tab-btn ${selectedChartTab === 'tiktok' ? 'active' : ''}`}>TikTok</button>
             </div>
           </div>
 
+          {/* Data Table */}
+          <div className="corp-card mb-6 overflow-x-auto">
+            <table className="w-full text-xs border-collapse" style={{ minWidth: '760px' }}>
+              <thead>
+                <tr>
+                  <th className="hist-th hist-th-dark" style={{ width: '100px' }}>Red Social</th>
+                  <th className="hist-th hist-th-dark">Cuenta</th>
+                  <th className="hist-th hist-th-dark">1 Ene<br/>(inicio)</th>
+                  {/* Enero - Febrero */}
+                  <th className="hist-th hist-th-blue" colSpan={2}>Enero – Febrero</th>
+                  {/* Marzo */}
+                  <th className="hist-th hist-th-green" colSpan={2}>Marzo</th>
+                  {/* Abril */}
+                  <th className="hist-th hist-th-orange" colSpan={2}>Abril</th>
+                  {/* Mayo */}
+                  <th className="hist-th hist-th-yellow" colSpan={2}>Mayo</th>
+                  <th className="hist-th hist-th-dark">Crec.<br/>total %</th>
+                </tr>
+                <tr>
+                  <th className="hist-th-sub"></th>
+                  <th className="hist-th-sub"></th>
+                  <th className="hist-th-sub"></th>
+                  <th className="hist-th-sub hist-th-blue-light">Enero</th>
+                  <th className="hist-th-sub hist-th-blue-light">Febrero</th>
+                  <th className="hist-th-sub hist-th-green-light">Meta</th>
+                  <th className="hist-th-sub hist-th-green-light">Cierre</th>
+                  <th className="hist-th-sub hist-th-orange-light">Meta</th>
+                  <th className="hist-th-sub hist-th-orange-light">Cierre</th>
+                  <th className="hist-th-sub hist-th-yellow-light">Meta</th>
+                  <th className="hist-th-sub hist-th-yellow-light">Cierre</th>
+                  <th className="hist-th-sub"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {tableRows.map(row => {
+                  const inicio = row.inicio;
+                  const cierreMayo = monthly_real.mayo[row.key];
+                  const growthPct = cierreMayo != null && inicio > 0
+                    ? (((cierreMayo - inicio) / inicio) * 100).toFixed(1)
+                    : null;
+                  const isPositive = growthPct > 0;
+                  return (
+                    <tr key={row.key} className="hist-tr">
+                      <td className="hist-td">
+                        <span className="hist-platform-badge" style={{ backgroundColor: row.color }}>{row.label}</span>
+                      </td>
+                      <td className="hist-td text-slate-600 font-medium">{row.account}</td>
+                      <td className="hist-td font-bold text-slate-800">{formatNumber(inicio)}</td>
+                      {/* Ene */}
+                      <td className="hist-td hist-cell-blue">{formatNumber(monthly_real.enero[row.key])}</td>
+                      {/* Feb */}
+                      <td className="hist-td hist-cell-blue">{formatNumber(monthly_real.febrero[row.key])}</td>
+                      {/* Mar meta */}
+                      <td className="hist-td hist-cell-green-light">{formatNumber(monthly_goals.marzo[row.key])}</td>
+                      {/* Mar real */}
+                      <td className="hist-td hist-cell-green font-bold">{formatNumber(monthly_real.marzo[row.key])}</td>
+                      {/* Abr meta */}
+                      <td className="hist-td hist-cell-orange-light">{formatNumber(monthly_goals.abril[row.key])}</td>
+                      {/* Abr real */}
+                      <td className="hist-td hist-cell-orange font-bold">{formatNumber(monthly_real.abril[row.key])}</td>
+                      {/* May meta */}
+                      <td className="hist-td hist-cell-yellow-light">{formatNumber(monthly_goals.mayo[row.key])}</td>
+                      {/* May real */}
+                      <td className="hist-td hist-cell-yellow font-bold">{formatNumber(monthly_real.mayo[row.key])}</td>
+                      {/* Growth */}
+                      <td className="hist-td text-center">
+                        {growthPct != null ? (
+                          <span className={`hist-growth-badge ${isPositive ? 'positive' : 'negative'}`}>
+                            {isPositive ? '+' : ''}{growthPct}%
+                          </span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
+          {/* Line Chart: Real vs Meta */}
+          <div className="corp-card">
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-[#003366] font-outfit">
+                {selectedChartTab === 'consolidado' ? 'Consolidado total — Real vs Meta' : `${platforms[selectedChartTab]?.name || selectedChartTab} — Real vs Meta`}
+              </h3>
+              <p className="text-slate-400 text-xs mt-0.5">Línea sólida = seguidores reales · Línea punteada = meta mensual</p>
+            </div>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={currentChartData} margin={{ top: 10, right: 24, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="label" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false}
+                    tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#003366', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                    formatter={(value, name) => [
+                      value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
+                      name === 'real' ? 'Real' : 'Meta'
+                    ]}
+                  />
+                  <Legend
+                    formatter={(value) => value === 'real' ? 'Seguidores Reales' : 'Meta Mensual'}
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                  />
+                  <Line
+                    type="monotone" dataKey="real" name="real"
+                    stroke={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
+                    strokeWidth={2.5} dot={{ r: 4, fill: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366') }}
+                    connectNulls={true} animationDuration={800}
+                  />
+                  <Line
+                    type="monotone" dataKey="meta" name="meta"
+                    stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 4"
+                    dot={{ r: 3, fill: '#94a3b8' }}
+                    connectNulls={true} animationDuration={800}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-3 text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center gap-1.5">
+              <Calendar size={12} className="text-[#003366]" />
+              Datos obtenidos del PDF oficial (ene–may 2026) y medición automática diaria a las 7:00 AM. Metas disponibles desde marzo.
+            </div>
+          </div>
         </section>
 
         {/* 3. Avance Operativo y Planificación (Oculto temporalmente) */}
