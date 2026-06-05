@@ -464,8 +464,8 @@ function App() {
             })()}
 
             {/* Recharts Composed Chart */}
-            <div className="h-96 w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full">
+              <ResponsiveContainer width="100%" height={384}>
                 <ComposedChart
                   data={currentChartData}
                   margin={{ top: 16, right: 28, left: -4, bottom: 0 }}
