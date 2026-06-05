@@ -763,21 +763,44 @@ const RACE_GRADIENTS = [
 ];
 const US_GRADIENT = 'linear-gradient(90deg,#ff6600,#ff9500)';
 
-function Avatar({ name, isUs, size = 44 }) {
+function Avatar({ name, isUs, logo, size = 44 }) {
+  const [imgOk, setImgOk] = React.useState(true);
   const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-  const colors = ['#1877f2','#e1306c','#ee1d52','#1d9bf0','#16a34a','#9333ea','#dc2626','#0891b2'];
-  const color  = isUs ? '#ff6600' : colors[name.charCodeAt(0) % colors.length];
+  const colors   = ['#1877f2','#e1306c','#ee1d52','#1d9bf0','#16a34a','#9333ea','#dc2626','#0891b2'];
+  const color    = isUs ? '#ff6600' : colors[name.charCodeAt(0) % colors.length];
+
+  const wrapStyle = {
+    width: size, height: size, borderRadius: '50%', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    border: isUs ? '3px solid #ff6600' : '2px solid #e2e8f0',
+    boxShadow: isUs ? '0 0 0 3px #ff660030' : '0 2px 6px rgba(0,0,0,0.10)',
+    overflow: 'hidden', background: '#fff',
+  };
+
+  // Use Google's reliable favicon service as primary, fallback to initials
+  const faviconUrl = logo
+    ? `https://www.google.com/s2/favicons?domain=${new URL(logo).hostname}&sz=64`
+    : null;
+
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: isUs ? US_GRADIENT : `linear-gradient(135deg,${color}cc,${color})`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      border: isUs ? '3px solid #ff6600' : '2px solid #e2e8f0',
-      boxShadow: isUs ? '0 0 0 3px #ff660030' : '0 2px 6px rgba(0,0,0,0.12)',
-      color: '#fff', fontWeight: 800, fontSize: size * 0.32, fontFamily: 'Outfit,sans-serif',
-      letterSpacing: '-0.5px',
-    }}>
-      {initials}
+    <div style={wrapStyle}>
+      {faviconUrl && imgOk ? (
+        <img
+          src={faviconUrl}
+          alt={name}
+          onError={() => setImgOk(false)}
+          style={{ width: size * 0.62, height: size * 0.62, objectFit: 'contain' }}
+        />
+      ) : (
+        <div style={{
+          width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: isUs ? US_GRADIENT : `linear-gradient(135deg,${color}cc,${color})`,
+          color: '#fff', fontWeight: 800, fontSize: size * 0.32,
+          fontFamily: 'Outfit,sans-serif', letterSpacing: '-0.5px',
+        }}>
+          {initials}
+        </div>
+      )}
     </div>
   );
 }
@@ -836,7 +859,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
       {usItem && (
         <div className="mb-5 rounded-2xl p-4 flex items-center gap-4"
           style={{ background: 'linear-gradient(135deg,#fff7ed,#ffedd5)', border: '2px solid #ff6600' }}>
-          <Avatar name={usItem[nameKey]} isUs size={52} />
+          <Avatar name={usItem[nameKey]} isUs logo={usItem.logo} size={52} />
           <div className="flex-1">
             <div className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Quadratín Morelos — Nuestra posición</div>
             <div className="text-2xl font-extrabold font-outfit text-orange-600">{formatNumber(usItem[compNetwork] || 0)}</div>
@@ -891,7 +914,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                   </div>
 
                   {/* Avatar */}
-                  <Avatar name={item[nameKey]} isUs={isUs} size={isUs ? 42 : 36} />
+                  <Avatar name={item[nameKey]} isUs={isUs} logo={item.logo} size={isUs ? 42 : 36} />
 
                   {/* Name */}
                   <div className="flex-1 min-w-0">
