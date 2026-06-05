@@ -91,6 +91,38 @@ export const supabase = {
     }
   },
 
+  // ── Competition History ──────────────────────────────────────────
+  // Saves a weekly snapshot of all competitors to competition_history table
+  // Each row: { fetched_date, type ('local'|'estado'), name, facebook, instagram, tiktok, twitter }
+  saveCompetitionSnapshot: async (rows) => {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/competition_history`, {
+        method: 'POST',
+        headers: { ...getHeaders(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify(rows)
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return true;
+    } catch (e) {
+      console.error('Error saving competition snapshot:', e);
+      return false;
+    }
+  },
+
+  getCompetitionHistory: async (type, name) => {
+    try {
+      let url = `${SUPABASE_URL}/rest/v1/competition_history?select=*&order=fetched_date.asc`;
+      if (type) url += `&type=eq.${type}`;
+      if (name) url += `&name=eq.${encodeURIComponent(name)}`;
+      const response = await fetch(url, { headers: getHeaders() });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
+    } catch (e) {
+      console.error('Error fetching competition history:', e);
+      return [];
+    }
+  },
+
   deleteTask: async (id) => {
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {

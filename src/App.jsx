@@ -989,107 +989,65 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
         );
       })()}
 
-      {/* ── Medios Locales: line chart ── */}
-      {compTab === 'local' && <div className="corp-card">
-        {/* Network pills */}
-        <div className="flex flex-wrap gap-2 mb-5 pb-4 border-b border-slate-100">
-          {['facebook','instagram','tiktok','twitter'].map(n => {
-            const cfg = NET_CONFIG[n]; const active = compNetwork === n;
-            return (
-              <button key={n} onClick={() => setCompNetwork(n)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
-                style={active ? { background: cfg.color, color:'#fff', borderColor: cfg.color } : { background:'#fff', color: cfg.color, borderColor: cfg.color+'50' }}>
-                <NetLogo network={n} size={14} />
-                {cfg.label}
-              </button>
-            );
-          })}
-        </div>
-        <ResponsiveContainer width="100%" height={500}>
-          <LineChart data={chartData}
-            margin={{ top: 24, right: 220, left: 10, bottom: 16 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis dataKey="network"
-              tick={{ fontSize: 13, fontWeight: 700, fill: '#475569', fontFamily: 'Outfit,sans-serif' }}
-              tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-            <YAxis
-              scale="log" domain={['auto', 'auto']}
-              tickFormatter={v => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}
-              tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}
-              width={48}
-            />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null;
-                const sorted = [...payload]
-                  .filter(p => p.value != null)
-                  .sort((a, b) => b.value - a.value);
+      {/* ── Medios Locales: barras horizontales ── */}
+      {compTab === 'local' && (() => {
+        const barData = [...competition_data.localMedia]
+          .filter(m => m[compNetwork] != null)
+          .sort((a, b) => (b[compNetwork]||0) - (a[compNetwork]||0));
+        const maxBar = barData[0]?.[compNetwork] || 1;
+        return (
+          <div className="corp-card">
+            <div className="flex flex-wrap gap-2 mb-5 pb-4 border-b border-slate-100">
+              {['facebook','instagram','tiktok','twitter'].map(n => {
+                const cfg = NET_CONFIG[n]; const active = compNetwork === n;
                 return (
-                  <div style={{
-                    background: '#fff', borderRadius: 14, padding: '12px 16px',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid #f1f5f9',
-                    minWidth: 220, maxWidth: 280
-                  }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#003366', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #f1f5f9', fontFamily: 'Outfit,sans-serif' }}>
-                      {label}
+                  <button key={n} onClick={() => setCompNetwork(n)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
+                    style={active ? { background: cfg.color, color:'#fff', borderColor: cfg.color } : { background:'#fff', color: cfg.color, borderColor: cfg.color+'50' }}>
+                    <NetLogo network={n} size={14} />
+                    {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="space-y-2.5">
+              {barData.map((item, idx) => {
+                const val  = item[compNetwork] || 0;
+                const pct  = (val / maxBar) * 100;
+                const isUs = item.isUs;
+                const grad = isUs ? US_GRADIENT : RACE_GRADIENTS[idx % RACE_GRADIENTS.length];
+                const host = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
+                const fav  = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+                return (
+                  <div key={idx} className="flex items-center gap-3"
+                    style={isUs ? { background:'#fff7ed', borderRadius:12, padding:'6px 8px', border:'1.5px solid #ff660040' } : { padding:'4px 8px' }}>
+                    <span className="text-[10px] font-extrabold w-6 text-center flex-shrink-0"
+                      style={{ color: idx===0?'#f59e0b':idx===1?'#94a3b8':idx===2?'#cd7c2f':'#cbd5e1' }}>
+                      #{idx+1}
+                    </span>
+                    <div style={{ width:34, height:34, borderRadius:'50%', border:`2.5px solid ${isUs?'#ff6600':'#e2e8f0'}`, overflow:'hidden', background:'#fff', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:isUs?'0 0 0 3px #ff660020':undefined }}>
+                      {fav ? <img src={fav} alt="" style={{ width:22, height:22, objectFit:'contain' }} /> : <span style={{ fontSize:11, fontWeight:800, color:isUs?'#ff6600':'#94a3b8' }}>{(item.name||'').substring(0,2).toUpperCase()}</span>}
                     </div>
-                    {sorted.map((entry, rank) => {
-                      const idx  = parseInt((entry.dataKey || '').replace('p',''));
-                      const item = displayData[idx];
-                      if (!item) return null;
-                      const isUs = item.isUs;
-                      const host = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
-                      const fav  = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
-                      return (
-                        <div key={rank} style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0',
-                          borderTop: rank > 0 ? '1px solid #f8fafc' : 'none',
-                          background: isUs ? '#fff7ed' : 'transparent',
-                          borderRadius: isUs ? 8 : 0, marginLeft: isUs ? -4 : 0, paddingLeft: isUs ? 4 : 0,
-                        }}>
-                          <span style={{
-                            fontSize: 9, fontWeight: 800, minWidth: 22, height: 18,
-                            borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: rank === 0 ? '#f59e0b' : rank === 1 ? '#94a3b8' : rank === 2 ? '#cd7c2f' : '#e2e8f0',
-                            color: rank < 3 ? '#fff' : '#64748b'
-                          }}>#{rank+1}</span>
-                          {fav
-                            ? <img src={fav} alt="" style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${entry.color}`, flexShrink: 0 }} />
-                            : <div style={{ width: 22, height: 22, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
-                          }
-                          <span style={{ fontSize: 11, fontWeight: isUs ? 800 : 600, color: entry.color, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {item[nameKey]}
-                          </span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: '#1e293b', flexShrink: 0 }}>
-                            {new Intl.NumberFormat('es-MX').format(entry.value)}
-                          </span>
-                        </div>
-                      );
-                    })}
+                    <span className="text-xs font-semibold flex-shrink-0 w-28 truncate" style={{ color:isUs?'#ff6600':'#334155' }}>
+                      {item.name}
+                    </span>
+                    <div className="flex-1 rounded-full overflow-hidden" style={{ height:isUs?14:10, background:'#f1f5f9', minWidth:0 }}>
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width:`${pct}%`, background:grad, boxShadow:isUs?'0 2px 8px #ff660030':undefined }} />
+                    </div>
+                    <div className="text-right flex-shrink-0 w-20">
+                      <div className="text-xs font-extrabold font-outfit" style={{ color:isUs?'#ff6600':'#1e293b' }}>
+                        {new Intl.NumberFormat('es-MX').format(val)}
+                      </div>
+                    </div>
+                    {isUs && <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0" style={{ background:US_GRADIENT }}>NOSOTROS</span>}
                   </div>
                 );
-              }}
-            />
-
-            {displayData.map((item, i) => {
-              const isUs = item.isUs;
-              const color = isUs ? '#ff6600' : COMP_COLORS[(i < usIdx ? i : i - 1) % COMP_COLORS.length];
-              return (
-                <Line key={i}
-                  dataKey={`p${i}`}
-                  stroke={color}
-                  strokeWidth={isUs ? 3.5 : 1.8}
-                  strokeOpacity={isUs ? 1 : 0.7}
-                  dot={makeDot(item, i, color, isUs)}
-                  activeDot={false}
-                  connectNulls={false}
-                  animationDuration={900}
-                />
-              );
-            })}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>}
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

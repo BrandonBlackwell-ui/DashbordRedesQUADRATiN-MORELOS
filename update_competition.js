@@ -6,8 +6,10 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const FB_KEY  = process.env.FB_KEY  || '4ba69eaa2amsh85583d0034b25cep1ebe37jsn4c3ca683070c';
-const RAP_KEY = process.env.RAP_KEY || 'ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988';
+const FB_KEY       = process.env.FB_KEY       || '4ba69eaa2amsh85583d0034b25cep1ebe37jsn4c3ca683070c';
+const RAP_KEY      = process.env.RAP_KEY      || 'ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rpggshwqdxbjhqyxjicv.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZ2dzaHdxZHhiamhxeXhqaWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1ODE2NzEsImV4cCI6MjA5NjE1NzY3MX0.8s0VEFUpBnVS_z0gWsDjEm0pZbxqSCDTPjUk9c9T5Sk';
 
 function get(url, headers) {
   return new Promise((resolve) => {
@@ -90,6 +92,63 @@ async function fetchItem(def, nameKey) {
   return result;
 }
 
+// Save snapshot to Supabase competition_history table
+async function saveToSupabase(today, localMedia, estados) {
+  const rows = [
+    ...localMedia.map(m => ({
+      fetched_date: today,
+      type: 'local',
+      name: m.name,
+      facebook:  m.facebook  || null,
+      instagram: m.instagram || null,
+      tiktok:    m.tiktok    || null,
+      twitter:   m.twitter   || null,
+    })),
+    ...estados.map(e => ({
+      fetched_date: today,
+      type: 'estado',
+      name: e.estado,
+      facebook:  e.facebook  || null,
+      instagram: e.instagram || null,
+      tiktok:    e.tiktok    || null,
+      twitter:   e.twitter   || null,
+    })),
+  ];
+
+  return new Promise((resolve) => {
+    const body = JSON.stringify(rows);
+    const url  = new URL(`${SUPABASE_URL}/rest/v1/competition_history`);
+    const options = {
+      hostname: url.hostname,
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+        'Content-Length': Buffer.byteLength(body),
+      }
+    };
+    const req = https.request(options, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log(`Supabase: ${rows.length} rows saved to competition_history`);
+          resolve(true);
+        } else {
+          console.error(`Supabase error ${res.statusCode}: ${data}`);
+          resolve(false);
+        }
+      });
+    });
+    req.on('error', e => { console.error('Supabase request error:', e); resolve(false); });
+    req.write(body);
+    req.end();
+  });
+}
+
 async function main() {
   console.log('=== Fetching local media ===');
   const localMedia = [];
@@ -100,6 +159,8 @@ async function main() {
   for (const d of estadosDefs) estados.push(await fetchItem(d, 'estado'));
 
   const today = new Date().toISOString().split('T')[0];
+
+  // Save competition.js for the dashboard
   const output = `// Competition data — auto-fetched weekly (Mondays) via GitHub Actions
 // Last updated: ${today}
 
@@ -116,6 +177,10 @@ export const competition_data = {
 
   fs.writeFileSync(path.join(__dirname, 'src', 'competition.js'), output, 'utf8');
   console.log('\nDone! src/competition.js updated.');
+
+  // Save historical snapshot to Supabase
+  console.log('\n=== Saving to Supabase competition_history ===');
+  await saveToSupabase(today, localMedia, estados);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
