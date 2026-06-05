@@ -910,10 +910,10 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
         <div>
           <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
             <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
-            Carrera de Seguidores
+            Análisis de Competencia
           </h2>
           <p className="text-slate-400 text-xs mt-0.5 ml-4">
-            {compTab === 'local' ? 'Medios Locales · Morelos' : 'Red Quadratín · Nacional'} · Última actualización: {competition_data.lastUpdated}
+            {compTab === 'local' ? 'Medios Locales · Morelos' : 'Red Quadratín · Nacional'} · Actualización semanal · {competition_data.lastUpdated}
           </p>
         </div>
         <div className="sub-tabs-container">
@@ -938,15 +938,56 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
               width={48}
             />
             <Tooltip
-              formatter={(value, name) => {
-                const idx = parseInt(name.replace('p',''));
-                const item = displayData[idx];
-                return [
-                  new Intl.NumberFormat('es-MX').format(value) + ' seguidores',
-                  item ? (item[nameKey] || '') : name
-                ];
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const sorted = [...payload]
+                  .filter(p => p.value != null)
+                  .sort((a, b) => b.value - a.value);
+                return (
+                  <div style={{
+                    background: '#fff', borderRadius: 14, padding: '12px 16px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid #f1f5f9',
+                    minWidth: 220, maxWidth: 280
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#003366', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #f1f5f9', fontFamily: 'Outfit,sans-serif' }}>
+                      {label}
+                    </div>
+                    {sorted.map((entry, rank) => {
+                      const idx  = parseInt((entry.dataKey || '').replace('p',''));
+                      const item = displayData[idx];
+                      if (!item) return null;
+                      const isUs = item.isUs;
+                      const host = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
+                      const fav  = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+                      return (
+                        <div key={rank} style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0',
+                          borderTop: rank > 0 ? '1px solid #f8fafc' : 'none',
+                          background: isUs ? '#fff7ed' : 'transparent',
+                          borderRadius: isUs ? 8 : 0, marginLeft: isUs ? -4 : 0, paddingLeft: isUs ? 4 : 0,
+                        }}>
+                          <span style={{
+                            fontSize: 9, fontWeight: 800, minWidth: 22, height: 18,
+                            borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: rank === 0 ? '#f59e0b' : rank === 1 ? '#94a3b8' : rank === 2 ? '#cd7c2f' : '#e2e8f0',
+                            color: rank < 3 ? '#fff' : '#64748b'
+                          }}>#{rank+1}</span>
+                          {fav
+                            ? <img src={fav} alt="" style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${entry.color}`, flexShrink: 0 }} />
+                            : <div style={{ width: 22, height: 22, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
+                          }
+                          <span style={{ fontSize: 11, fontWeight: isUs ? 800 : 600, color: entry.color, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item[nameKey]}
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#1e293b', flexShrink: 0 }}>
+                            {new Intl.NumberFormat('es-MX').format(entry.value)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
               }}
-              contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
             />
 
             {displayData.map((item, i) => {
@@ -968,9 +1009,6 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
           </LineChart>
         </ResponsiveContainer>
 
-        <p className="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">
-          Eje Y en escala logarítmica — permite ver cuentas pequeñas y grandes en la misma gráfica. Los labels del extremo derecho están escalonados para evitar solapamiento.
-        </p>
       </div>
     </div>
   );
