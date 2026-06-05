@@ -521,14 +521,15 @@ function App() {
                         type="monotone"
                         dataKey="real"
                         name="real"
-                        stroke="transparent"
-                        strokeWidth={0}
+                        stroke={activeColor}
+                        strokeOpacity={0}
+                        strokeWidth={1}
                         dot={(props) => {
                           const { cx, cy, value, index } = props;
                           if (value == null || cx == null || cy == null) return <g key={index} />;
                           return (
                             <g key={`r-${index}`}>
-                              <circle cx={cx} cy={cy} r={11} fill={activeColor} opacity={0.12} />
+                              <circle cx={cx} cy={cy} r={12} fill={activeColor} fillOpacity={0.12} />
                               <circle cx={cx} cy={cy} r={7} fill={activeColor} stroke="#ffffff" strokeWidth={2.5} />
                             </g>
                           );
@@ -537,14 +538,13 @@ function App() {
                           const { cx, cy } = props;
                           return (
                             <g>
-                              <circle cx={cx} cy={cy} r={14} fill={activeColor} opacity={0.18} />
+                              <circle cx={cx} cy={cy} r={15} fill={activeColor} fillOpacity={0.18} />
                               <circle cx={cx} cy={cy} r={9} fill={activeColor} stroke="#ffffff" strokeWidth={2.5} />
                             </g>
                           );
                         }}
                         connectNulls={false}
                         animationDuration={800}
-                        isAnimationActive={true}
                       />
 
                       {/* Meta — dots only, gray */}
@@ -552,14 +552,15 @@ function App() {
                         type="monotone"
                         dataKey="meta"
                         name="meta"
-                        stroke="transparent"
-                        strokeWidth={0}
+                        stroke="#94a3b8"
+                        strokeOpacity={0}
+                        strokeWidth={1}
                         dot={(props) => {
                           const { cx, cy, value, index } = props;
                           if (value == null || cx == null || cy == null) return <g key={index} />;
                           return (
                             <g key={`m-${index}`}>
-                              <circle cx={cx} cy={cy} r={8} fill="#cbd5e1" opacity={0.25} />
+                              <circle cx={cx} cy={cy} r={8} fill="#cbd5e1" fillOpacity={0.3} />
                               <circle cx={cx} cy={cy} r={5} fill="#94a3b8" stroke="#ffffff" strokeWidth={2} />
                             </g>
                           );
@@ -568,7 +569,7 @@ function App() {
                           const { cx, cy } = props;
                           return (
                             <g>
-                              <circle cx={cx} cy={cy} r={11} fill="#94a3b8" opacity={0.2} />
+                              <circle cx={cx} cy={cy} r={11} fill="#94a3b8" fillOpacity={0.2} />
                               <circle cx={cx} cy={cy} r={7} fill="#94a3b8" stroke="#ffffff" strokeWidth={2} />
                             </g>
                           );
