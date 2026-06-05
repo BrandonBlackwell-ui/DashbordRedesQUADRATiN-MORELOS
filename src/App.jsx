@@ -837,45 +837,64 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
 
   const usIdx = displayData.findIndex(m => m.isUs);
 
-  // Custom end-point dot: avatar circle + name/value label only at last point
+  // Pre-compute staggered Y positions for end labels (avoids overlap)
+  const CHART_H = 500, M_TOP = 24, M_BOTTOM = 16;
+  const lastNet = networks[networks.length - 1];
+  const sortedByLast = displayData
+    .map((item, i) => ({ i, v: item[lastNet] || 0 }))
+    .filter(d => d.v > 0)
+    .sort((a, b) => b.v - a.v);
+  const plotH = CHART_H - M_TOP - M_BOTTOM;
+  const step  = plotH / (sortedByLast.length + 1);
+  const labelY = {};
+  sortedByLast.forEach(({ i }, rank) => {
+    labelY[i] = M_TOP + step * (rank + 1);
+  });
+
+  // Custom dot: avatar + staggered label only at last point
   const makeDot = (item, itemIdx, color, isUs) => (props) => {
     const { cx, cy, index } = props;
     const isLast = index === networks.length - 1;
-    const val = chartData[index]?.[`p${itemIdx}`];
+    const val    = chartData[index]?.[`p${itemIdx}`];
     if (!val) return <g key={`d-${itemIdx}-${index}`} />;
 
     if (!isLast) {
-      return <circle key={`d-${itemIdx}-${index}`} cx={cx} cy={cy} r={isUs ? 4 : 3} fill={color} stroke="#fff" strokeWidth={1.5} />;
+      return <circle key={`d-${itemIdx}-${index}`} cx={cx} cy={cy}
+        r={isUs ? 5 : 3.5} fill={color} stroke="#fff" strokeWidth={1.5} />;
     }
 
-    // End label — avatar + name + value
-    const r    = isUs ? 20 : 15;
-    const host = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
-    const faviconUrl = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
-    const shortName  = (item[nameKey] || '').split(' ').slice(0, 2).join(' ');
-    const clipId     = `cp-${compTab}-${itemIdx}`;
+    const r         = isUs ? 20 : 15;
+    const lY        = labelY[itemIdx] ?? cy;
+    const host      = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
+    const favicon   = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+    const shortName = (item[nameKey] || '').split(' ').slice(0, 2).join(' ');
+    const clipId    = `cp-${compTab}-${itemIdx}`;
 
     return (
       <g key={`d-${itemIdx}-${index}`}>
+        {/* connector line from data point to label */}
+        {Math.abs(cy - lY) > r + 4 && (
+          <line x1={cx} y1={cy} x2={cx + 8} y2={lY}
+            stroke={color} strokeWidth={1} strokeOpacity={0.35} strokeDasharray="4 3" />
+        )}
+        {/* dot at actual data position */}
         {isUs && <circle cx={cx} cy={cy} r={r + 5} fill={color} fillOpacity={0.12} />}
         <circle cx={cx} cy={cy} r={r + 1} fill="#fff" />
         <circle cx={cx} cy={cy} r={r} fill="#fff" stroke={color} strokeWidth={isUs ? 3 : 2} />
         <defs>
-          <clipPath id={clipId}>
-            <circle cx={cx} cy={cy} r={r - 2} />
-          </clipPath>
+          <clipPath id={clipId}><circle cx={cx} cy={cy} r={r - 2} /></clipPath>
         </defs>
-        {faviconUrl && (
-          <image href={faviconUrl} x={cx - (r-2)} y={cy - (r-2)}
+        {favicon && (
+          <image href={favicon} x={cx-(r-2)} y={cy-(r-2)}
             width={(r-2)*2} height={(r-2)*2}
-            clipPath={`url(#${clipId})`}
-            preserveAspectRatio="xMidYMid meet" />
+            clipPath={`url(#${clipId})`} preserveAspectRatio="xMidYMid meet" />
         )}
-        <text x={cx + r + 8} y={cy - 4} fontSize={isUs ? 12 : 10}
+        {/* label at staggered position */}
+        <text x={cx + r + 10} y={lY - 3} fontSize={isUs ? 12 : 10}
           fontWeight={isUs ? 800 : 600} fill={color} fontFamily="Outfit,sans-serif">
           {shortName}
         </text>
-        <text x={cx + r + 8} y={cy + 10} fontSize={isUs ? 11 : 9}
+        <text x={cx + r + 10} y={lY + 11} fontSize={isUs ? 11 : 9}
           fontWeight={700} fill={color} fillOpacity={0.8} fontFamily="Outfit,sans-serif">
           {new Intl.NumberFormat('es-MX').format(val)}
         </text>
@@ -904,10 +923,10 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
       </div>
 
       {/* Chart card */}
-      <div className="corp-card overflow-x-auto">
-        <div style={{ minWidth: 560 }}>
-          <LineChart width={900} height={480} data={chartData}
-            margin={{ top: 24, right: 210, left: 20, bottom: 10 }}>
+      <div className="corp-card">
+        <ResponsiveContainer width="100%" height={500}>
+          <LineChart data={chartData}
+            margin={{ top: 24, right: 220, left: 10, bottom: 16 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis dataKey="network"
               tick={{ fontSize: 13, fontWeight: 700, fill: '#475569', fontFamily: 'Outfit,sans-serif' }}
@@ -947,10 +966,10 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
               );
             })}
           </LineChart>
-        </div>
+        </ResponsiveContainer>
 
         <p className="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">
-          Eje Y en escala logarítmica — permite ver tanto cuentas pequeñas como grandes en la misma gráfica sin que se aplanen.
+          Eje Y en escala logarítmica — permite ver cuentas pequeñas y grandes en la misma gráfica. Los labels del extremo derecho están escalonados para evitar solapamiento.
         </p>
       </div>
     </div>
