@@ -4,6 +4,7 @@ import { qm_analysis } from './analysis';
 import { supabase } from './supabase';
 import {
   ComposedChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -469,9 +470,16 @@ function App() {
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={currentChartData}
-                  margin={{ top: 20, right: 28, left: -4, bottom: 0 }}
+                  margin={{ top: 16, right: 28, left: -4, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <defs>
+                    <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={activeColor} stopOpacity={0.15} />
+                      <stop offset="95%" stopColor={activeColor} stopOpacity={0.01} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
 
                   <XAxis
                     dataKey="label"
@@ -493,10 +501,10 @@ function App() {
                     contentStyle={{
                       backgroundColor: '#ffffff',
                       borderColor: activeColor,
-                      borderRadius: '12px',
+                      borderRadius: '10px',
                       fontSize: '12px',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                      padding: '10px 16px'
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+                      padding: '10px 14px'
                     }}
                     itemStyle={{ color: '#374151', fontWeight: 600 }}
                     labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
@@ -509,24 +517,25 @@ function App() {
                   <Legend
                     formatter={(value) =>
                       value === 'real'
-                        ? <span style={{ color: activeColor, fontWeight: 700, fontSize: '11px' }}>● Seguidores Reales</span>
-                        : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>● Meta Mensual</span>
+                        ? <span style={{ color: activeColor, fontWeight: 700, fontSize: '11px' }}>&#9679; Seguidores Reales</span>
+                        : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>&#9679; Meta Mensual</span>
                     }
-                    wrapperStyle={{ paddingTop: '12px' }}
+                    wrapperStyle={{ paddingTop: '10px' }}
                   />
 
-                  {/* Real — dots coloreados por plataforma, línea casi invisible */}
-                  <Line
+                  {/* Area — fondo sutil del color de la plataforma */}
+                  <Area
                     type="monotone"
                     dataKey="real"
                     name="real"
                     stroke={activeColor}
-                    strokeWidth={1}
-                    strokeDasharray="2 8"
-                    dot={{ r: 8, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
-                    activeDot={{ r: 11, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
-                    connectNulls={false}
-                    animationDuration={800}
+                    strokeWidth={0}
+                    fill="url(#realGradient)"
+                    fillOpacity={1}
+                    dot={{ r: 9, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
+                    activeDot={{ r: 12, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
+                    connectNulls={true}
+                    animationDuration={900}
                   />
 
                   {/* Meta — dots grises */}
@@ -535,12 +544,11 @@ function App() {
                     dataKey="meta"
                     name="meta"
                     stroke="#94a3b8"
-                    strokeWidth={1}
-                    strokeDasharray="2 8"
-                    dot={{ r: 6, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
+                    strokeWidth={0}
+                    dot={{ r: 7, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
                     activeDot={{ r: 9, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
-                    connectNulls={false}
-                    animationDuration={800}
+                    connectNulls={true}
+                    animationDuration={900}
                   />
 
                 </ComposedChart>
