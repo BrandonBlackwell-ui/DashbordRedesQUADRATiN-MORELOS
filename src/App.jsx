@@ -825,14 +825,12 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
     displayData = top9.filter(Boolean);
   }
 
-  // Normalize each network to % of its own leader so all 4 fit same scale
+  // Raw follower values per network — log scale handles the spread
   const chartData = networks.map((n, ni) => {
-    const maxN = Math.max(...displayData.map(m => m[n] || 0));
     const pt = { network: netLabels[ni] };
     displayData.forEach((item, i) => {
       const v = item[n];
-      pt[`p${i}`] = v ? Math.round((v / maxN) * 100) : null;
-      pt[`v${i}`] = v;
+      pt[`p${i}`] = v && v > 0 ? v : null;   // raw value, no normalization
     });
     return pt;
   });
@@ -843,7 +841,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
   const makeDot = (item, itemIdx, color, isUs) => (props) => {
     const { cx, cy, index } = props;
     const isLast = index === networks.length - 1;
-    const val = chartData[index]?.[`v${itemIdx}`];
+    const val = chartData[index]?.[`p${itemIdx}`];
     if (!val) return <g key={`d-${itemIdx}-${index}`} />;
 
     if (!isLast) {
@@ -907,21 +905,25 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
 
       {/* Chart card */}
       <div className="corp-card overflow-x-auto">
-        <div style={{ minWidth: 520 }}>
-          <LineChart width={860} height={420} data={chartData}
-            margin={{ top: 20, right: 200, left: 10, bottom: 10 }}>
+        <div style={{ minWidth: 560 }}>
+          <LineChart width={900} height={480} data={chartData}
+            margin={{ top: 24, right: 210, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis dataKey="network" tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b', fontFamily: 'Outfit,sans-serif' }}
+            <XAxis dataKey="network"
+              tick={{ fontSize: 13, fontWeight: 700, fill: '#475569', fontFamily: 'Outfit,sans-serif' }}
               tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-            <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`}
+            <YAxis
+              scale="log" domain={['auto', 'auto']}
+              tickFormatter={v => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}
               tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}
-              label={{ value: '% del líder por red', angle: -90, position: 'insideLeft', offset: 10, fontSize: 10, fill: '#94a3b8' }} />
+              width={48}
+            />
             <Tooltip
               formatter={(value, name) => {
                 const idx = parseInt(name.replace('p',''));
                 const item = displayData[idx];
                 return [
-                  `${value}% del líder`,
+                  new Intl.NumberFormat('es-MX').format(value) + ' seguidores',
                   item ? (item[nameKey] || '') : name
                 ];
               }}
@@ -948,7 +950,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
         </div>
 
         <p className="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">
-          El eje Y muestra el porcentaje relativo al líder de cada red. Ejemplo: 100% = líder en esa plataforma.
+          Eje Y en escala logarítmica — permite ver tanto cuentas pequeñas como grandes en la misma gráfica sin que se aplanen.
         </p>
       </div>
     </div>
