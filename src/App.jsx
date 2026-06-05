@@ -229,6 +229,9 @@ function App() {
           >
             Dependencias
           </button>
+          <button style={{ background: 'red', color: 'white', padding: '4px 12px', borderRadius: 6, fontWeight: 700 }}>
+            LOGIN TEST
+          </button>
         </div>
       </header>
 
