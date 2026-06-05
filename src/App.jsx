@@ -68,6 +68,12 @@ const TwitterXLogo = ({ className }) => (
 function App() {
   const [selectedChartTab, setSelectedChartTab] = useState('consolidado');
   const [activeReportTab, setActiveReportTab] = useState('redes');
+  const [showMetasForm, setShowMetasForm] = useState(false);
+  const [metasPin, setMetasPin] = useState('');
+  const [metasPinOk, setMetasPinOk] = useState(false);
+  const [metasForm, setMetasForm] = useState({ facebook: '', instagram: '', twitter: '', tiktok: '' });
+  const [metasSaved, setMetasSaved] = useState(false);
+  const METAS_PIN = 'QM2026';
 
   // Extract history and configurations from data
   const history = qm_data.history;
@@ -191,7 +197,7 @@ function App() {
     { label: 'Marzo', real: { facebook: 80479, instagram: 3936, twitter: 10584, tiktok: 2116 }, goal: { facebook: 93500, instagram: 4500, twitter: 12933, tiktok: 2500 } },
     { label: 'Abril', real: { facebook: 81025, instagram: 11904, twitter: 10603, tiktok: 5638 }, goal: { facebook: 109000, instagram: 9000, twitter: 15289, tiktok: 5000 } },
     { label: 'Mayo', real: { facebook: 81024, instagram: 19917, twitter: 10628, tiktok: 5794 }, goal: { facebook: 84000, instagram: 13500, twitter: 15200, tiktok: 7500 } },
-    { label: 'Junio', real: { facebook: 81097, instagram: 20583, twitter: 10635, tiktok: 5854 }, goal: { facebook: 87000, instagram: 18000, twitter: 20000, tiktok: 10000 } },
+    { label: 'Junio', real: { facebook: 81129, instagram: 20818, twitter: 10636, tiktok: 5868 }, goal: { facebook: 87000, instagram: 18000, twitter: 20000, tiktok: 10000 } },
   ];
 
   // Flatten chart data for recharts
@@ -345,6 +351,8 @@ function App() {
               const progressPct = (item.current / item.goal) * 100;
               const remaining = item.goal - item.current;
               const isGoalMet = item.current >= item.goal;
+              const perfColor = isGoalMet ? '#16a34a' : progressPct >= 80 ? '#ff6600' : progressPct >= 50 ? '#f97316' : '#dc2626';
+              const perfBg    = isGoalMet ? '#f0fdf4' : progressPct >= 80 ? '#fff7ed' : progressPct >= 50 ? '#fff7ed' : '#fef2f2';
 
               return (
                 <div key={key} className="corp-card">
@@ -387,18 +395,18 @@ function App() {
                     <div className="space-y-1">
                       <div className="flex justify-between items-center text-[11px]">
                         <span className="text-slate-400 flex items-center gap-0.5"><Target size={11} /> Meta: {formatNumber(item.goal)}</span>
-                        <span className="font-bold" style={{ color: isGoalMet ? 'var(--color-success)' : 'var(--color-blue)' }}>
+                        <span className="font-bold text-sm px-1.5 py-0.5 rounded-md" style={{ color: perfColor, backgroundColor: perfBg }}>
                           {progressPct.toFixed(1)}%
                         </span>
                       </div>
-                      
+
                       {/* Bar */}
                       <div className="progress-bar-container">
-                        <div 
+                        <div
                           className="h-full transition-all duration-1000"
-                          style={{ 
+                          style={{
                             width: `${Math.min(progressPct, 100)}%`,
-                            backgroundColor: isGoalMet ? 'var(--color-success)' : 'var(--color-blue)'
+                            backgroundColor: perfColor
                           }}
                         />
                       </div>
@@ -702,9 +710,6 @@ function App() {
             <span>Quadratín Morelos · Dashboard Ejecutivo Q2</span>
             <span>•</span>
             <span>Estadísticas en Tiempo Real</span>
-          </p>
-          <p className="mt-1">
-            Diseño corporativo oficial basado en la identidad visual de Quadratín (Naranja y Azul).
           </p>
         </footer>
 
