@@ -182,6 +182,8 @@ function App() {
     ? consolidadoChartData
     : buildChartData(selectedChartTab);
 
+  const activeColor = selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366');
+
   const activeNotes = qm_analysis[activeReportTab];
 
   // Table config
@@ -463,127 +465,87 @@ function App() {
             })()}
 
             {/* Dot Chart */}
-            {(() => {
-              const activeColor = selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366');
-              return (
-                <div className="h-96 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart
-                      data={currentChartData}
-                      margin={{ top: 20, right: 28, left: -4, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <div className="h-96 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={currentChartData}
+                  margin={{ top: 20, right: 28, left: -4, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
 
-                      <XAxis
-                        dataKey="label"
-                        stroke="#9ca3af"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={6}
-                      />
-                      <YAxis
-                        stroke="#9ca3af"
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
-                      />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={6}
+                  />
+                  <YAxis
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
+                  />
 
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          borderColor: activeColor,
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                          padding: '10px 16px'
-                        }}
-                        itemStyle={{ color: '#374151', fontWeight: 600 }}
-                        labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
-                        formatter={(value, name) => [
-                          value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
-                          name === 'real' ? '● Seguidores Reales' : '● Meta Mensual'
-                        ]}
-                      />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderColor: activeColor,
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                      padding: '10px 16px'
+                    }}
+                    itemStyle={{ color: '#374151', fontWeight: 600 }}
+                    labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
+                    formatter={(value, name) => [
+                      value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
+                      name === 'real' ? '● Seguidores Reales' : '● Meta Mensual'
+                    ]}
+                  />
 
-                      <Legend
-                        formatter={(value) =>
-                          value === 'real'
-                            ? <span style={{ color: activeColor, fontWeight: 700, fontSize: '11px' }}>● Seguidores Reales</span>
-                            : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>● Meta Mensual</span>
-                        }
-                        wrapperStyle={{ paddingTop: '12px' }}
-                      />
+                  <Legend
+                    formatter={(value) =>
+                      value === 'real'
+                        ? <span style={{ color: activeColor, fontWeight: 700, fontSize: '11px' }}>● Seguidores Reales</span>
+                        : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>● Meta Mensual</span>
+                    }
+                    wrapperStyle={{ paddingTop: '12px' }}
+                  />
 
-                      {/* Real — dots only, colored by platform */}
-                      <Line
-                        type="monotone"
-                        dataKey="real"
-                        name="real"
-                        stroke={activeColor}
-                        strokeOpacity={0}
-                        strokeWidth={1}
-                        dot={(props) => {
-                          const { cx, cy, value, index } = props;
-                          if (value == null || cx == null || cy == null) return <g key={index} />;
-                          return (
-                            <g key={`r-${index}`}>
-                              <circle cx={cx} cy={cy} r={12} fill={activeColor} fillOpacity={0.12} />
-                              <circle cx={cx} cy={cy} r={7} fill={activeColor} stroke="#ffffff" strokeWidth={2.5} />
-                            </g>
-                          );
-                        }}
-                        activeDot={(props) => {
-                          const { cx, cy } = props;
-                          return (
-                            <g>
-                              <circle cx={cx} cy={cy} r={15} fill={activeColor} fillOpacity={0.18} />
-                              <circle cx={cx} cy={cy} r={9} fill={activeColor} stroke="#ffffff" strokeWidth={2.5} />
-                            </g>
-                          );
-                        }}
-                        connectNulls={false}
-                        animationDuration={800}
-                      />
+                  {/* Real — dots coloreados por plataforma, línea casi invisible */}
+                  <Line
+                    type="monotone"
+                    dataKey="real"
+                    name="real"
+                    stroke={activeColor}
+                    strokeWidth={1}
+                    strokeDasharray="2 8"
+                    dot={{ r: 8, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
+                    activeDot={{ r: 11, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
+                    connectNulls={false}
+                    animationDuration={800}
+                  />
 
-                      {/* Meta — dots only, gray */}
-                      <Line
-                        type="monotone"
-                        dataKey="meta"
-                        name="meta"
-                        stroke="#94a3b8"
-                        strokeOpacity={0}
-                        strokeWidth={1}
-                        dot={(props) => {
-                          const { cx, cy, value, index } = props;
-                          if (value == null || cx == null || cy == null) return <g key={index} />;
-                          return (
-                            <g key={`m-${index}`}>
-                              <circle cx={cx} cy={cy} r={8} fill="#cbd5e1" fillOpacity={0.3} />
-                              <circle cx={cx} cy={cy} r={5} fill="#94a3b8" stroke="#ffffff" strokeWidth={2} />
-                            </g>
-                          );
-                        }}
-                        activeDot={(props) => {
-                          const { cx, cy } = props;
-                          return (
-                            <g>
-                              <circle cx={cx} cy={cy} r={11} fill="#94a3b8" fillOpacity={0.2} />
-                              <circle cx={cx} cy={cy} r={7} fill="#94a3b8" stroke="#ffffff" strokeWidth={2} />
-                            </g>
-                          );
-                        }}
-                        connectNulls={false}
-                        animationDuration={800}
-                        isAnimationActive={true}
-                      />
+                  {/* Meta — dots grises */}
+                  <Line
+                    type="monotone"
+                    dataKey="meta"
+                    name="meta"
+                    stroke="#94a3b8"
+                    strokeWidth={1}
+                    strokeDasharray="2 8"
+                    dot={{ r: 6, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
+                    activeDot={{ r: 9, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
+                    connectNulls={false}
+                    animationDuration={800}
+                  />
 
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              );
-            })()}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
 
             {/* Footer note */}
             <div className="mt-4 text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center gap-1.5">
