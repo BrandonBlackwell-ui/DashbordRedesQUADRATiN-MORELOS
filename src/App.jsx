@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { qm_data } from './data';
 import { qm_analysis } from './analysis';
 import { supabase } from './supabase';
@@ -71,34 +71,6 @@ function App() {
 
   // Extract history and configurations from data
   const history = qm_data.history;
-
-  // Auto-save monthly close on last day of each month
-  useEffect(() => {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const isLastDayOfMonth = tomorrow.getMonth() !== today.getMonth();
-    if (!isLastDayOfMonth) return;
-
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 1-12
-    const lastEntry = history[history.length - 1];
-    const storageKey = `cierre_saved_${year}_${month}`;
-    if (localStorage.getItem(storageKey)) return; // already saved today
-
-    supabase.saveMonthlyCierre(year, month, {
-      facebook:  lastEntry.facebook  ?? null,
-      instagram: lastEntry.instagram ?? null,
-      twitter:   lastEntry.twitter   ?? null,
-      tiktok:    lastEntry.tiktok    ?? null,
-      youtube:   lastEntry.youtube   ?? null,
-    }).then(result => {
-      if (result) {
-        localStorage.setItem(storageKey, '1');
-        console.log(`✅ Cierre mensual guardado: ${year}-${month}`);
-      }
-    });
-  }, []);
   const goals = qm_data.goals;
   const monthly_goals = qm_data.monthly_goals;
   const monthly_real = qm_data.monthly_real;
@@ -110,6 +82,31 @@ function App() {
   // Last month-end close (entries labeled "Cierre ...")
   const cierreEntries = history.filter(h => h.label && h.label.startsWith('Cierre'));
   const lastMonthClose = cierreEntries[cierreEntries.length - 1] || initialEntry;
+
+  // Auto-save monthly close on last day of each month
+  useEffect(() => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const isLastDayOfMonth = tomorrow.getMonth() !== today.getMonth();
+    if (!isLastDayOfMonth) return;
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const storageKey = `cierre_saved_${year}_${month}`;
+    if (localStorage.getItem(storageKey)) return;
+    supabase.saveMonthlyCierre(year, month, {
+      facebook:  lastEntry.facebook  ?? null,
+      instagram: lastEntry.instagram ?? null,
+      twitter:   lastEntry.twitter   ?? null,
+      tiktok:    lastEntry.tiktok    ?? null,
+      youtube:   lastEntry.youtube   ?? null,
+    }).then(result => {
+      if (result) {
+        localStorage.setItem(storageKey, '1');
+        console.log(`Cierre mensual guardado: ${year}-${month}`);
+      }
+    });
+  }, []);
 
   // Platform configuration objects
   const platforms = {
@@ -174,7 +171,7 @@ function App() {
     return `Cuernavaca, Morelos a ${day} de ${month} de ${year}`;
   };
 
-  const formatNumber = (num) => num == null ? 'â€”' : new Intl.NumberFormat('es-MX').format(num);
+  const formatNumber = (num) => num == null ? '—' : new Intl.NumberFormat('es-MX').format(num);
   const formatPercentage = (val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
 
   // Totals using last entry
@@ -219,10 +216,10 @@ function App() {
 
   // Table config
   const tableRows = [
-    { key: 'facebook', label: 'FACEBOOK', color: '#1877f2', bg: '#e7f0fd', account: 'QuadratÃ­n Morelos', inicio: 78000 },
+    { key: 'facebook', label: 'FACEBOOK', color: '#1877f2', bg: '#e7f0fd', account: 'Quadratín Morelos', inicio: 78000 },
     { key: 'instagram', label: 'INSTAGRAM', color: '#e1306c', bg: '#fce8f1', account: '@quadratin.morelos', inicio: 1692 },
     { key: 'twitter', label: 'X / TWITTER', color: '#1d9bf0', bg: '#e7f5fe', account: '@Quadratin_Mor', inicio: 10500 },
-    { key: 'youtube', label: 'YOUTUBE', color: '#ff0000', bg: '#ffe5e5', account: 'QuadratÃ­n Morelos', inicio: 216 },
+    { key: 'youtube', label: 'YOUTUBE', color: '#ff0000', bg: '#ffe5e5', account: 'Quadratín Morelos', inicio: 216 },
     { key: 'tiktok', label: 'TIKTOK', color: '#010101', bg: '#f0f0f0', account: '@quadratin.morelos', inicio: 1893 },
   ];
   const tableMonths = [
@@ -236,15 +233,15 @@ function App() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-slate-100 font-sans antialiased overflow-x-hidden">
       
-      {/* 1. Header Oficial de QuadratÃ­n Morelos */}
+      {/* 1. Header Oficial de Quadratín Morelos */}
       <header className="w-full">
         
-        {/* SecciÃ³n Central Blanca con Logo */}
+        {/* Sección Central Blanca con Logo */}
         <div className="header-main-logo">
-          <img src="/logo_quadratin.png" alt="Logo QuadratÃ­n Morelos" />
+          <img src="/logo_quadratin.png" alt="Logo Quadratín Morelos" />
         </div>
         
-        {/* Barra de NavegaciÃ³n Azul Marino */}
+        {/* Barra de Navegación Azul Marino */}
         <div className="header-nav-bar">
           <span className="header-nav-title">Reporte de Avances</span>
           <button 
@@ -271,14 +268,14 @@ function App() {
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <h1 className="text-2xl font-bold font-outfit text-[#003366]">
-              Dashboard de MÃ©tricas
+              Dashboard de Métricas
             </h1>
             <p className="text-slate-500 text-sm mt-0.5">
-              CampaÃ±a Q2 2026 Â· Resumen ejecutivo y cumplimiento de objetivos.
+              Campaña Q2 2026 · Resumen ejecutivo y cumplimiento de objetivos.
             </p>
           </div>
           <div className="flex flex-col items-start sm:items-end">
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Ãšltimo Scrape Automatizado</span>
+            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Último Scrape Automatizado</span>
             <span className="text-sm font-bold text-[#003366] flex items-center gap-1.5 mt-0.5">
               <Clock size={15} className="text-[#ff6600]" />
               {formatDateSpanish(lastEntry.date)} (7:00 AM)
@@ -308,7 +305,7 @@ function App() {
               <div className="text-3xl font-extrabold text-[#003366] font-outfit">+{formatNumber(totalGrowth)}</div>
             </div>
             <div className="text-xs text-slate-500 mt-4">
-              Seguidores totales ganados en la campaÃ±a
+              Seguidores totales ganados en la campaña
             </div>
           </div>
 
@@ -427,7 +424,9 @@ function App() {
                         <span className="text-slate-700 font-bold">{formatNumber(item.initial)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Cierre {lastMonthClose.label?.replace('Cierre ', '') || 'May'}:</span>
+                        <span className="text-slate-400">
+                          Cierre {lastMonthClose.label?.replace('Cierre ', '') || 'May'}:
+                        </span>
                         <span className="font-bold" style={{ color: (lastMonthClose[key] ?? 0) >= item.initial ? 'var(--color-success)' : 'var(--color-danger)' }}>
                           {formatNumber(lastMonthClose[key] ?? item.initial)}
                         </span>
@@ -440,7 +439,7 @@ function App() {
           </div>
         </section>
 
-        {/* HistÃ³rico de Crecimiento â€” GrÃ¡fica */}
+        {/* Histórico de Crecimiento — Gráfica */}
         <section className="mb-10">
 
           {/* Section Header */}
@@ -448,9 +447,9 @@ function App() {
             <div>
               <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
                 <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
-                HistÃ³rico de Crecimiento â€” QuadratÃ­n Morelos
+                Histórico de Crecimiento — Quadratín Morelos
               </h2>
-              <p className="text-slate-400 text-xs mt-0.5 ml-4">Enero â€“ Mayo 2026 Â· â—Â RealÂ Â· â– Â Meta (marzoâ€“mayo)
+              <p className="text-slate-400 text-xs mt-0.5 ml-4">Enero – Mayo 2026 · ● Real · ■ Meta (marzo–mayo)
               </p>
             </div>
 
@@ -478,7 +477,7 @@ function App() {
                   <div className="flex flex-col">
                     <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Seguidores actuales</span>
                     <span className="text-2xl font-extrabold font-outfit" style={{ color: p?.color || '#003366' }}>
-                      {p ? formatNumber(p.current) : 'â€”'}
+                      {p ? formatNumber(p.current) : '—'}
                     </span>
                   </div>
                   <div className="flex flex-col">
@@ -488,7 +487,7 @@ function App() {
                   <div className="flex flex-col">
                     <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Meta mayo ({formatNumber(p?.goal)})</span>
                     <span className={`text-xl font-bold ${isOver ? 'text-emerald-600' : 'text-[#003366]'}`}>
-                      {goalPct}% {isOver ? 'âœ“ Superada' : ''}
+                      {goalPct}% {isOver ? '✓ Superada' : ''}
                     </span>
                   </div>
                 </div>
@@ -545,8 +544,8 @@ function App() {
                     itemStyle={{ color: '#374151', fontWeight: 600 }}
                     labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
                     formatter={(value, name) => [
-                      value != null ? new Intl.NumberFormat('es-MX').format(value) : 'â€”',
-                      name === 'real' ? 'ðŸŸ¢ Seguidores Reales' : 'â–  Meta Mensual'
+                      value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
+                      name === 'real' ? '🟢 Seguidores Reales' : '■ Meta Mensual'
                     ]}
                   />
 
@@ -559,7 +558,7 @@ function App() {
                     wrapperStyle={{ paddingTop: '10px' }}
                   />
 
-                  {/* Colored Area â€” Real */}
+                  {/* Colored Area — Real */}
                   <Area
                     type="monotone"
                     dataKey="real"
@@ -579,7 +578,7 @@ function App() {
                     animationDuration={900}
                   />
 
-                  {/* Gray dashed Line â€” Meta */}
+                  {/* Gray dashed Line — Meta */}
                   <Line
                     type="monotone"
                     dataKey="meta"
@@ -600,12 +599,12 @@ function App() {
             {/* Footer note */}
             <div className="mt-4 text-xs text-slate-400 border-t border-slate-100 pt-3 flex items-center gap-1.5">
               <Calendar size={12} className="text-[#003366]" />
-              Datos del PDF oficial (eneâ€“mayÂ 2026) y scraping automÃ¡tico diario 7Â AM. Metas disponibles desde marzo.
+              Datos del PDF oficial (ene–jun 2026) y scraping automático diario 7 AM. Metas disponibles desde marzo.
             </div>
           </div>
         </section>
 
-        {/* 3. Avance Operativo y PlanificaciÃ³n (Oculto temporalmente) */}
+        {/* 3. Avance Operativo y Planificación (Oculto temporalmente) */}
         {false && (
           <section className="mb-10">
             <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
@@ -614,7 +613,7 @@ function App() {
                 {activeNotes.title}
               </h2>
               <span className="text-xs font-bold bg-[#e6f0fa] text-[#003366] px-3 py-1 rounded-full uppercase tracking-wider">
-                {activeNotes.is_dynamic ? 'Generado con IA (Claude)' : 'Datos EstÃ¡ticos del PDF'}
+                {activeNotes.is_dynamic ? 'Generado con IA (Claude)' : 'Datos Estáticos del PDF'}
               </span>
             </div>
             
@@ -625,17 +624,17 @@ function App() {
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                     <h3 className="font-bold font-outfit text-slate-700 flex items-center gap-1.5 text-sm">
-                      <span className="text-emerald-500">ðŸ†</span> Logros de la Semana
+                      <span className="text-emerald-500">🏆</span> Logros de la Semana
                     </h3>
                     <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100">
-                      {activeNotes.logros.length} Ã­tems
+                      {activeNotes.logros.length} ítems
                     </span>
                   </div>
 
                   <div className="space-y-1">
                     {activeNotes.logros.map((text, idx) => (
                       <div key={idx} className="op-list-item">
-                        <span className="text-emerald-500 op-bullet">âœ“</span>
+                        <span className="text-emerald-500 op-bullet">✓</span>
                         <span className="op-text">{text}</span>
                       </div>
                     ))}
@@ -648,17 +647,17 @@ function App() {
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                     <h3 className="font-bold font-outfit text-slate-700 flex items-center gap-1.5 text-sm">
-                      <span className="text-amber-500">âš¡</span> Accionables PrÃ³xima Semana
+                      <span className="text-amber-500">⚡</span> Accionables Próxima Semana
                     </h3>
                     <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100">
-                      {activeNotes.accionables.length} Ã­tems
+                      {activeNotes.accionables.length} ítems
                     </span>
                   </div>
 
                   <div className="space-y-1">
                     {activeNotes.accionables.map((text, idx) => (
                       <div key={idx} className="op-list-item">
-                        <span className="text-amber-500 op-bullet">â–¶</span>
+                        <span className="text-amber-500 op-bullet">▶</span>
                         <span className="op-text">{text}</span>
                       </div>
                     ))}
@@ -671,17 +670,17 @@ function App() {
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                     <h3 className="font-bold font-outfit text-slate-700 flex items-center gap-1.5 text-sm">
-                      <span className="text-[#003366]">ðŸ“Œ</span> Dependencias y Notas
+                      <span className="text-[#003366]">📌</span> Dependencias y Notas
                     </h3>
                     <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">
-                      {activeNotes.dependencias.length} Ã­tems
+                      {activeNotes.dependencias.length} ítems
                     </span>
                   </div>
 
                   <div className="space-y-1">
                     {activeNotes.dependencias.map((text, idx) => (
                       <div key={idx} className="op-list-item">
-                        <span className="text-[#003366] op-bullet">â€¢</span>
+                        <span className="text-[#003366] op-bullet">•</span>
                         <span className="op-text">{text}</span>
                       </div>
                     ))}
@@ -700,12 +699,12 @@ function App() {
         {/* Footer */}
         <footer className="mt-16 border-t border-slate-200 pt-8 text-center text-slate-400 text-xs">
           <p className="flex items-center justify-center gap-1.5 font-medium">
-            <span>QuadratÃ­n Morelos Â· Dashboard Ejecutivo Q2</span>
-            <span>â€¢</span>
-            <span>EstadÃ­sticas en Tiempo Real</span>
+            <span>Quadratín Morelos · Dashboard Ejecutivo Q2</span>
+            <span>•</span>
+            <span>Estadísticas en Tiempo Real</span>
           </p>
           <p className="mt-1">
-            DiseÃ±o corporativo oficial basado en la identidad visual de QuadratÃ­n (Naranja y Azul).
+            Diseño corporativo oficial basado en la identidad visual de Quadratín (Naranja y Azul).
           </p>
         </footer>
 
@@ -777,7 +776,7 @@ function DependenciasDashboard() {
         
         updatedMeta[task.id] = {
           priority: 'media',
-          assignee: 'DirecciÃ³n',
+          assignee: 'Dirección',
           dueDate: formattedDate
         };
         hasChanges = true;
@@ -807,7 +806,7 @@ function DependenciasDashboard() {
         ...localMetadata,
         [newTask.id]: {
           priority: 'media',
-          assignee: 'DirecciÃ³n',
+          assignee: 'Dirección',
           dueDate: formattedDate
         }
       };
@@ -860,8 +859,8 @@ function DependenciasDashboard() {
     const diffMs = nowDate - createdDate;
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffDays === 0) return '0 dÃ­as';
-    return `${diffDays} ${diffDays === 1 ? 'dÃ­a' : 'dÃ­as'}`;
+    if (diffDays === 0) return '0 días';
+    return `${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
   };
 
   const getElapsedTimeBadgeClass = (dateStr) => {
@@ -895,20 +894,20 @@ function DependenciasDashboard() {
         <div className="asana-sidebar-workspace">
           <div className="asana-sidebar-avatar">QM</div>
           <div className="asana-sidebar-ws-info">
-            <div className="asana-sidebar-ws-name">QuadratÃ­n Morelos</div>
-            <div className="asana-sidebar-ws-role">Espacio de DirecciÃ³n</div>
+            <div className="asana-sidebar-ws-name">Quadratín Morelos</div>
+            <div className="asana-sidebar-ws-role">Espacio de Dirección</div>
           </div>
         </div>
 
         <nav className="asana-sidebar-menu">
           <div className="asana-sidebar-link active">
-            <span>ðŸ“‹</span> Tareas del Equipo
+            <span>📋</span> Tareas del Equipo
           </div>
-          <div className="asana-sidebar-link" onClick={() => alert("PrÃ³ximamente: Bandeja de entrada con notificaciones en tiempo real.")}>
-            <span>âœ‰ï¸</span> Bandeja de entrada
+          <div className="asana-sidebar-link" onClick={() => alert("Próximamente: Bandeja de entrada con notificaciones en tiempo real.")}>
+            <span>✉️</span> Bandeja de entrada
           </div>
-          <div className="asana-sidebar-link" onClick={() => alert("PrÃ³ximamente: Portafolios de proyectos generales.")}>
-            <span>ðŸ“Š</span> Portafolios
+          <div className="asana-sidebar-link" onClick={() => alert("Próximamente: Portafolios de proyectos generales.")}>
+            <span>📊</span> Portafolios
           </div>
         </nav>
 
@@ -918,7 +917,7 @@ function DependenciasDashboard() {
             <span className="asana-dot" style={{ backgroundColor: 'var(--asana-primary)' }}></span>
             <span className="truncate">Dependencias DG</span>
           </div>
-          <div className="asana-project-item" onClick={() => alert("Proyecto secundario en planificaciÃ³n.")}>
+          <div className="asana-project-item" onClick={() => alert("Proyecto secundario en planificación.")}>
             <span className="asana-dot" style={{ backgroundColor: 'var(--asana-amber)' }}></span>
             <span className="truncate">Reporte de Avances</span>
           </div>
@@ -931,9 +930,9 @@ function DependenciasDashboard() {
         <header className="asana-proj-header">
           <div className="asana-proj-meta-bar">
             <div className="asana-proj-title-wrapper">
-              <div className="asana-proj-icon">ðŸ“Œ</div>
+              <div className="asana-proj-icon">📌</div>
               <div>
-                <h1 className="asana-proj-title">Dependencias DirecciÃ³n General</h1>
+                <h1 className="asana-proj-title">Dependencias Dirección General</h1>
                 <p className="asana-proj-subtitle">Seguimiento de procesos, aprobaciones y tareas del equipo directivo.</p>
               </div>
             </div>
@@ -959,20 +958,20 @@ function DependenciasDashboard() {
         {oldestPendingTask && !isAlertDismissed && (
           <div className="asana-retraso-banner">
             <div className="asana-retraso-content">
-              <span>âš ï¸</span>
+              <span>⚠️</span>
               <div>
-                <strong>Alerta de Retraso:</strong> La dependencia pendiente mÃ¡s antigua es "<strong>{oldestPendingTask.title}</strong>", 
-                asignada a <strong>{localMetadata[oldestPendingTask.id]?.assignee || 'DirecciÃ³n'}</strong>. 
+                <strong>Alerta de Retraso:</strong> La dependencia pendiente más antigua es "<strong>{oldestPendingTask.title}</strong>", 
+                asignada a <strong>{localMetadata[oldestPendingTask.id]?.assignee || 'Dirección'}</strong>. 
                 {(() => {
                   const createdDate = new Date(oldestPendingTask.created_at);
                   const diffDays = Math.floor((new Date() - createdDate) / 86400000);
                   return diffDays === 1 
-                    ? " Ha transcurrido 1 dÃ­a desde su creaciÃ³n." 
-                    : ` Han transcurrido ${diffDays} dÃ­as desde su creaciÃ³n.`;
+                    ? " Ha transcurrido 1 día desde su creación." 
+                    : ` Han transcurrido ${diffDays} días desde su creación.`;
                 })()}
               </div>
             </div>
-            <button className="asana-banner-close" onClick={() => setIsAlertDismissed(true)}>âœ•</button>
+            <button className="asana-banner-close" onClick={() => setIsAlertDismissed(true)}>✕</button>
           </div>
         )}
 
@@ -980,7 +979,7 @@ function DependenciasDashboard() {
         <div className="asana-workspace-body">
           {loading ? (
             <div className="asana-empty-state">
-              <span className="inline-block animate-spin mr-2">â³</span> Cargando dependencias desde Supabase...
+              <span className="inline-block animate-spin mr-2">⏳</span> Cargando dependencias desde Supabase...
             </div>
           ) : activeView === 'list' ? (
             /* Vista de Lista */
@@ -991,7 +990,7 @@ function DependenciasDashboard() {
                     <th className="asana-th" style={{ width: '40px' }}></th>
                     <th className="asana-th">Nombre de la tarea</th>
                     <th className="asana-th" style={{ width: '130px' }}>Responsable</th>
-                    <th className="asana-th" style={{ width: '120px' }}>Fecha lÃ­mite</th>
+                    <th className="asana-th" style={{ width: '120px' }}>Fecha límite</th>
                     <th className="asana-th" style={{ width: '100px' }}>Prioridad</th>
                     <th className="asana-th" style={{ width: '140px' }}>Tiempo transcurrido</th>
                     <th className="asana-th" style={{ width: '50px' }}></th>
@@ -1000,7 +999,7 @@ function DependenciasDashboard() {
                 <tbody>
                   {/* Tareas Activas */}
                   {pendingTasks.map(task => {
-                    const meta = localMetadata[task.id] || { priority: 'media', assignee: 'DirecciÃ³n', dueDate: '' };
+                    const meta = localMetadata[task.id] || { priority: 'media', assignee: 'Dirección', dueDate: '' };
                     return (
                       <tr key={task.id} className="asana-tr">
                         <td className="asana-td">
@@ -1016,15 +1015,15 @@ function DependenciasDashboard() {
                         <td className="asana-td">
                           {activeDropdown?.taskId === task.id && activeDropdown?.field === 'assignee' ? (
                             <select 
-                              value={meta.assignee || 'DirecciÃ³n'} 
+                              value={meta.assignee || 'Dirección'} 
                               onChange={(e) => updateMetadata(task.id, 'assignee', e.target.value)}
                               onBlur={() => setActiveDropdown(null)}
                               autoFocus
                               className="asana-inline-select"
                             >
-                              <option value="DirecciÃ³n">DirecciÃ³n</option>
-                              <option value="RedacciÃ³n">RedacciÃ³n</option>
-                              <option value="DiseÃ±o">DiseÃ±o</option>
+                              <option value="Dirección">Dirección</option>
+                              <option value="Redacción">Redacción</option>
+                              <option value="Diseño">Diseño</option>
                               <option value="Redes">Redes</option>
                             </select>
                           ) : (
@@ -1032,7 +1031,7 @@ function DependenciasDashboard() {
                               className="asana-badge-pill asana-badge-assignee"
                               onClick={() => setActiveDropdown({ taskId: task.id, field: 'assignee' })}
                             >
-                              ðŸ‘¤ {meta.assignee || 'DirecciÃ³n'}
+                              👤 {meta.assignee || 'Dirección'}
                             </button>
                           )}
                         </td>
@@ -1051,7 +1050,7 @@ function DependenciasDashboard() {
                               className="asana-badge-pill asana-badge-date"
                               onClick={() => setActiveDropdown({ taskId: task.id, field: 'dueDate' })}
                             >
-                              ðŸ“… {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
+                              📅 {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
                             </button>
                           )}
                         </td>
@@ -1073,13 +1072,13 @@ function DependenciasDashboard() {
                               className={`asana-badge-pill asana-badge-priority-${meta.priority || 'media'}`}
                               onClick={() => setActiveDropdown({ taskId: task.id, field: 'priority' })}
                             >
-                              âš¡ {(meta.priority || 'media').toUpperCase()}
+                              ⚡ {(meta.priority || 'media').toUpperCase()}
                             </button>
                           )}
                         </td>
                         <td className="asana-td">
                           <span className={`asana-pill ${getElapsedTimeBadgeClass(task.created_at)}`}>
-                            â±ï¸ {getElapsedTime(task.created_at)}
+                            ⏱️ {getElapsedTime(task.created_at)}
                           </span>
                         </td>
                         <td className="asana-td text-center">
@@ -1088,7 +1087,7 @@ function DependenciasDashboard() {
                             onClick={() => handleDeleteTask(task.id)}
                             title="Eliminar dependencia"
                           >
-                            ðŸ—‘ï¸
+                            🗑️
                           </button>
                         </td>
                       </tr>
@@ -1102,7 +1101,7 @@ function DependenciasDashboard() {
                         <span className="asana-inline-add-icon">+</span>
                         <input 
                           type="text" 
-                          placeholder="Agregar una nueva tarea o proceso de DirecciÃ³n..."
+                          placeholder="Agregar una nueva tarea o proceso de Dirección..."
                           value={newTaskTitle}
                           onChange={(e) => setNewTaskTitle(e.target.value)}
                           className="asana-inline-input"
@@ -1126,7 +1125,7 @@ function DependenciasDashboard() {
                         </td>
                       </tr>
                       {completedTasks.map(task => {
-                        const meta = localMetadata[task.id] || { priority: 'media', assignee: 'DirecciÃ³n', dueDate: '' };
+                        const meta = localMetadata[task.id] || { priority: 'media', assignee: 'Dirección', dueDate: '' };
                         return (
                           <tr key={task.id} className="asana-tr opacity-60">
                             <td className="asana-td">
@@ -1137,17 +1136,17 @@ function DependenciasDashboard() {
                             </td>
                             <td className="asana-td">
                               <span className="asana-badge-pill asana-badge-assignee cursor-default">
-                                ðŸ‘¤ {meta.assignee || 'DirecciÃ³n'}
+                                👤 {meta.assignee || 'Dirección'}
                               </span>
                             </td>
                             <td className="asana-td">
                               <span className="asana-badge-pill asana-badge-date cursor-default">
-                                ðŸ“… {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
+                                📅 {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
                               </span>
                             </td>
                             <td className="asana-td">
                               <span className={`asana-badge-pill asana-badge-priority-${meta.priority || 'media'} cursor-default`}>
-                                âš¡ {(meta.priority || 'media').toUpperCase()}
+                                ⚡ {(meta.priority || 'media').toUpperCase()}
                               </span>
                             </td>
                             <td className="asana-td">
@@ -1161,7 +1160,7 @@ function DependenciasDashboard() {
                                 onClick={() => handleDeleteTask(task.id)}
                                 title="Eliminar registro"
                               >
-                                ðŸ—‘ï¸
+                                🗑️
                               </button>
                             </td>
                           </tr>
@@ -1179,18 +1178,18 @@ function DependenciasDashboard() {
               <div className="asana-board-col">
                 <div className="asana-board-col-header">
                   <div className="asana-board-col-title">
-                    <span className="text-amber-500">â–¶</span> Tareas Activas
+                    <span className="text-amber-500">▶</span> Tareas Activas
                   </div>
                   <span className="asana-board-col-count">{pendingTasks.length}</span>
                 </div>
 
                 {pendingTasks.length === 0 ? (
                   <div className="asana-board-empty">
-                    ðŸŽ‰ Â¡No hay dependencias activas! Todo al dÃ­a.
+                    🎉 ¡No hay dependencias activas! Todo al día.
                   </div>
                 ) : (
                   pendingTasks.map(task => {
-                    const meta = localMetadata[task.id] || { priority: 'media', assignee: 'DirecciÃ³n', dueDate: '' };
+                    const meta = localMetadata[task.id] || { priority: 'media', assignee: 'Dirección', dueDate: '' };
                     return (
                       <div key={task.id} className="asana-card">
                         <div className="asana-card-header">
@@ -1200,15 +1199,15 @@ function DependenciasDashboard() {
                             onClick={() => handleDeleteTask(task.id)}
                             title="Eliminar tarea"
                           >
-                            ðŸ—‘ï¸
+                            🗑️
                           </button>
                         </div>
                         <div className="asana-card-meta">
                           <span className={`asana-badge-pill asana-badge-priority-${meta.priority || 'media'} cursor-default`}>
-                            âš¡ {meta.priority?.toUpperCase()}
+                            ⚡ {meta.priority?.toUpperCase()}
                           </span>
                           <span className="asana-badge-pill asana-badge-date cursor-default">
-                            ðŸ“… {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
+                            📅 {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
                           </span>
                         </div>
                         <div className="asana-card-footer">
@@ -1219,7 +1218,7 @@ function DependenciasDashboard() {
                             <span className="text-xs text-slate-500">{meta.assignee}</span>
                           </div>
                           <span className={`asana-pill ${getElapsedTimeBadgeClass(task.created_at)}`}>
-                            â±ï¸ {getElapsedTime(task.created_at)}
+                            ⏱️ {getElapsedTime(task.created_at)}
                           </span>
                         </div>
                         <button 
@@ -1238,7 +1237,7 @@ function DependenciasDashboard() {
               <div className="asana-board-col">
                 <div className="asana-board-col-header">
                   <div className="asana-board-col-title">
-                    <span className="text-emerald-500">âœ“</span> Completadas
+                    <span className="text-emerald-500">✓</span> Completadas
                   </div>
                   <span className="asana-board-col-count">{completedTasks.length}</span>
                 </div>
@@ -1249,7 +1248,7 @@ function DependenciasDashboard() {
                   </div>
                 ) : (
                   completedTasks.map(task => {
-                    const meta = localMetadata[task.id] || { priority: 'media', assignee: 'DirecciÃ³n', dueDate: '' };
+                    const meta = localMetadata[task.id] || { priority: 'media', assignee: 'Dirección', dueDate: '' };
                     return (
                       <div key={task.id} className="asana-card opacity-60">
                         <div className="asana-card-header">
@@ -1259,15 +1258,15 @@ function DependenciasDashboard() {
                             onClick={() => handleDeleteTask(task.id)}
                             title="Eliminar registro"
                           >
-                            ðŸ—‘ï¸
+                            🗑️
                           </button>
                         </div>
                         <div className="asana-card-meta">
                           <span className={`asana-badge-pill asana-badge-priority-${meta.priority || 'media'} cursor-default`}>
-                            âš¡ {meta.priority?.toUpperCase()}
+                            ⚡ {meta.priority?.toUpperCase()}
                           </span>
                           <span className="asana-badge-pill asana-badge-date cursor-default">
-                            ðŸ“… {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
+                            📅 {meta.dueDate ? formatDateBrief(meta.dueDate) : 'Sin fecha'}
                           </span>
                         </div>
                         <div className="asana-card-footer">
