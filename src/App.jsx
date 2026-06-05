@@ -735,104 +735,179 @@ function App() {
 
 // ─── Competencia Section ────────────────────────────────────────────────────
 const NET_CONFIG = {
-  facebook:  { label: 'Facebook',  color: '#1877f2', bg: '#e7f0fd' },
-  instagram: { label: 'Instagram', color: '#e1306c', bg: '#fce8f1' },
-  tiktok:    { label: 'TikTok',    color: '#ee1d52', bg: '#fff0f3' },
-  twitter:   { label: 'X/Twitter', color: '#1d9bf0', bg: '#e7f5fe' },
+  facebook:  { label: 'Facebook',  color: '#1877f2', bg: '#e7f0fd', Logo: FacebookLogo },
+  instagram: { label: 'Instagram', color: '#e1306c', bg: '#fce8f1', Logo: InstagramLogo },
+  tiktok:    { label: 'TikTok',    color: '#ee1d52', bg: '#fff0f3', Logo: TikTokLogo },
+  twitter:   { label: 'X/Twitter', color: '#1d9bf0', bg: '#e7f5fe', Logo: TwitterXLogo },
 };
+
+function NetLogo({ network, size = 18 }) {
+  const logos = {
+    facebook:  <svg viewBox="0 0 24 24" style={{ width: size, height: size, flexShrink: 0 }}><rect width="24" height="24" rx="4" fill="#1877F2"/><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="#fff"/></svg>,
+    instagram: <svg viewBox="0 0 24 24" style={{ width: size, height: size, flexShrink: 0 }}><defs><radialGradient id="igC" cx="30%" cy="107%" r="130%"><stop offset="0%" stopColor="#fdf497"/><stop offset="45%" stopColor="#fd5949"/><stop offset="60%" stopColor="#d6249f"/><stop offset="90%" stopColor="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="5" fill="url(#igC)"/><path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0 8.25A3.25 3.25 0 1112 8.75a3.25 3.25 0 010 6.5zM17.25 7a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0z" fill="#fff"/><path d="M16 3H8C5.24 3 3 5.24 3 8v8c0 2.76 2.24 5 5 5h8c2.76 0 5-2.24 5-5V8c0-2.76-2.24-5-5-5zm3.25 13c0 1.79-1.46 3.25-3.25 3.25H8C6.21 19.25 4.75 17.79 4.75 16V8C4.75 6.21 6.21 4.75 8 4.75h8c1.79 0 3.25 1.46 3.25 3.25v8z" fill="#fff"/></svg>,
+    tiktok:    <svg viewBox="0 0 24 24" style={{ width: size, height: size, flexShrink: 0 }}><rect width="24" height="24" rx="4" fill="#010101"/><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.99 1.15 2.33 1.93 3.79 2.19v3.9c-1.57-.02-3.11-.53-4.41-1.42-.49-.34-.94-.74-1.32-1.19v6.84c.05 1.5-.32 3.02-1.13 4.29-.93 1.48-2.45 2.58-4.17 3.01-1.74.45-3.62.24-5.21-.6-1.59-.85-2.82-2.34-3.37-4.08-.58-1.77-.38-3.76.54-5.36C3.96 10 5.48 8.87 7.23 8.39c1.07-.3 2.19-.3 3.25-.01v4.03c-.87-.31-1.84-.19-2.6.33-.87.57-1.39 1.59-1.35 2.62.03.95.53 1.85 1.33 2.37.83.56 1.88.66 2.78.27.9-.36 1.58-1.14 1.83-2.09.11-.47.15-.96.15-1.44V0h.005z" fill="#fff"/></svg>,
+    twitter:   <svg viewBox="0 0 24 24" style={{ width: size, height: size, flexShrink: 0 }}><rect width="24" height="24" rx="4" fill="#000"/><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="#fff"/></svg>,
+  };
+  return logos[network] || null;
+}
 
 function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
   const networks = ['facebook', 'instagram', 'tiktok', 'twitter'];
 
-  const localSorted = [...competition_data.localMedia]
+  const sourceData = compTab === 'local' ? competition_data.localMedia : competition_data.estados;
+  const nameKey    = compTab === 'local' ? 'name' : 'estado';
+
+  // Summary cards: our rank per network
+  const ourSummary = networks.map(n => {
+    const sorted = [...sourceData].filter(m => m[n] != null).sort((a, b) => b[n] - a[n]);
+    const rank = sorted.findIndex(m => m.isUs) + 1;
+    const us = sourceData.find(m => m.isUs);
+    return { n, rank, total: sorted.length, val: us?.[n] || null };
+  });
+
+  const activeData = [...sourceData]
     .filter(m => m[compNetwork] != null)
     .sort((a, b) => (b[compNetwork] || 0) - (a[compNetwork] || 0));
 
-  const estadosSorted = [...competition_data.estados]
-    .filter(e => e[compNetwork] != null)
-    .sort((a, b) => (b[compNetwork] || 0) - (a[compNetwork] || 0));
+  const maxVal = activeData[0]?.[compNetwork] || 1;
+  const net    = NET_CONFIG[compNetwork];
 
-  const activeData = compTab === 'local' ? localSorted : estadosSorted;
-  const nameKey    = compTab === 'local' ? 'name' : 'estado';
-  const maxVal     = activeData[0]?.[compNetwork] || 1;
-  const net        = NET_CONFIG[compNetwork];
+  const medalColor = (idx) => idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#cd7c2f' : null;
 
   return (
     <div className="py-2">
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
-          <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
-          Análisis de Competencia
-        </h2>
-        <p className="text-slate-400 text-xs mt-0.5 ml-4">
-          Actualización semanal (lunes) · Última actualización: {competition_data.lastUpdated}
-        </p>
-      </div>
-
-      {/* Tab + Network selectors */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="sub-tabs-container">
-          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab === 'local'   ? 'active' : ''}`}>Medios Locales Morelos</button>
-          <button onClick={() => setCompTab('estados')} className={`sub-tab-btn ${compTab === 'estados' ? 'active' : ''}`}>Quadratín por Estado</button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+          <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
+            Análisis de Competencia
+          </h2>
+          <p className="text-slate-400 text-xs mt-0.5 ml-4">
+            Actualización semanal · {competition_data.lastUpdated}
+          </p>
         </div>
         <div className="sub-tabs-container">
-          {networks.map(n => (
-            <button key={n} onClick={() => setCompNetwork(n)} className={`sub-tab-btn ${compNetwork === n ? 'active' : ''}`}
-              style={compNetwork === n ? { backgroundColor: NET_CONFIG[n].color, color: '#fff', borderColor: NET_CONFIG[n].color } : {}}>
-              {NET_CONFIG[n].label}
+          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab === 'local'   ? 'active' : ''}`}>Medios Locales</button>
+          <button onClick={() => setCompTab('estados')} className={`sub-tab-btn ${compTab === 'estados' ? 'active' : ''}`}>Quadratín Nacional</button>
+        </div>
+      </div>
+
+      {/* Summary cards — our position per network */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {ourSummary.map(({ n, rank, total, val }) => {
+          const cfg = NET_CONFIG[n];
+          return (
+            <button key={n}
+              onClick={() => setCompNetwork(n)}
+              className="corp-card text-left transition-all duration-200 hover:scale-[1.02]"
+              style={compNetwork === n ? { borderColor: cfg.color, borderWidth: 2, borderStyle: 'solid' } : {}}>
+              <div className="flex items-center justify-between mb-2">
+                <NetLogo network={n} size={22} />
+                {rank > 0 && (
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: cfg.bg, color: cfg.color }}>
+                    #{rank} de {total}
+                  </span>
+                )}
+              </div>
+              <div className="text-lg font-extrabold font-outfit" style={{ color: val ? cfg.color : '#94a3b8' }}>
+                {val ? formatNumber(val) : '—'}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium">{cfg.label}</div>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Ranking bars */}
+      {/* Network selector pills */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {networks.map(n => {
+          const cfg = NET_CONFIG[n];
+          const active = compNetwork === n;
+          return (
+            <button key={n} onClick={() => setCompNetwork(n)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
+              style={active
+                ? { backgroundColor: cfg.color, color: '#fff', borderColor: cfg.color }
+                : { backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.color + '40' }}>
+              <NetLogo network={n} size={14} />
+              {cfg.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Ranking chart */}
       <div className="corp-card">
-        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
-          <h3 className="font-bold font-outfit text-[#003366] text-sm">
-            Seguidores en <span style={{ color: net.color }}>{net.label}</span>
-            {' '}— {compTab === 'local' ? 'Medios Locales Morelos' : 'Red Quadratín por Estado'}
+        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
+          <NetLogo network={compNetwork} size={20} />
+          <h3 className="font-bold font-outfit text-[#003366] text-sm flex-1">
+            Ranking {net.label} · {compTab === 'local' ? 'Medios Locales Morelos' : 'Red Quadratín Nacional'}
           </h3>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: net.color, backgroundColor: net.bg }}>
             {activeData.length} medios
           </span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {activeData.map((item, idx) => {
             const val  = item[compNetwork] || 0;
             const pct  = (val / maxVal) * 100;
             const isUs = item.isUs;
+            const medal = medalColor(idx);
             return (
-              <div key={idx} className={`rounded-lg p-2.5 ${isUs ? 'border-2' : 'border border-slate-100'}`}
-                style={isUs ? { borderColor: net.color, backgroundColor: net.bg } : { backgroundColor: '#f8fafc' }}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-extrabold w-5 text-center rounded"
-                      style={{ color: isUs ? net.color : '#94a3b8', backgroundColor: isUs ? net.bg : '#f1f5f9' }}>
-                      {idx + 1}
-                    </span>
-                    <span className={`text-xs font-bold ${isUs ? '' : 'text-slate-700'}`}
-                      style={isUs ? { color: net.color } : {}}>
-                      {item[nameKey]} {isUs ? '← Nosotros' : ''}
-                    </span>
+              <div key={idx}
+                className="rounded-xl p-3 transition-all"
+                style={isUs
+                  ? { background: `linear-gradient(135deg, ${net.bg} 0%, #ffffff 100%)`, border: `2px solid ${net.color}` }
+                  : { backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                <div className="flex items-center gap-3 mb-2">
+                  {/* Rank badge */}
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-extrabold"
+                    style={medal
+                      ? { backgroundColor: medal, color: '#fff' }
+                      : isUs
+                        ? { backgroundColor: net.color, color: '#fff' }
+                        : { backgroundColor: '#e2e8f0', color: '#64748b' }}>
+                    {idx < 3 ? ['🥇','🥈','🥉'][idx] : idx + 1}
                   </div>
-                  <span className={`text-sm font-extrabold font-outfit`} style={{ color: isUs ? net.color : '#374151' }}>
+                  {/* Name */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-xs font-bold truncate ${isUs ? '' : 'text-slate-700'}`}
+                        style={isUs ? { color: net.color } : {}}>
+                        {item[nameKey]}
+                      </span>
+                      {isUs && (
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white flex-shrink-0"
+                          style={{ backgroundColor: net.color }}>
+                          NOSOTROS
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Value */}
+                  <span className="text-sm font-extrabold font-outfit flex-shrink-0"
+                    style={{ color: isUs ? net.color : '#374151' }}>
                     {formatNumber(val)}
                   </span>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                {/* Bar */}
+                <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: isUs ? `${net.color}20` : '#e2e8f0' }}>
                   <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, backgroundColor: isUs ? net.color : '#cbd5e1' }} />
+                    style={{ width: `${pct}%`, backgroundColor: isUs ? net.color : '#94a3b8' }} />
                 </div>
+                {/* Percentage vs leader */}
+                {idx > 0 && (
+                  <div className="text-right mt-1">
+                    <span className="text-[9px] text-slate-400">{pct.toFixed(0)}% del líder</span>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
-
-        <p className="text-[10px] text-slate-400 mt-4 pt-3 border-t border-slate-100">
-          Datos obtenidos via RapidAPI (Instagram, TikTok, Twitter) y Facebook Scraper API. Se actualiza cada lunes automáticamente.
-        </p>
       </div>
     </div>
   );
