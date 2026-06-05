@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { qm_data } from './data';
 import { qm_analysis } from './analysis';
+import { competition_data } from './competition';
 import { supabase } from './supabase';
 import {
   ComposedChart,
@@ -68,6 +69,8 @@ const TwitterXLogo = ({ className }) => (
 function App() {
   const [selectedChartTab, setSelectedChartTab] = useState('consolidado');
   const [activeReportTab, setActiveReportTab] = useState('redes');
+  const [compTab, setCompTab] = useState('local');
+  const [compNetwork, setCompNetwork] = useState('facebook');
   const [showMetasForm, setShowMetasForm] = useState(false);
   const [metasPin, setMetasPin] = useState('');
   const [metasPinOk, setMetasPinOk] = useState(false);
@@ -256,11 +259,17 @@ function App() {
           >
             Redes Sociales
           </button>
-          <button 
+          <button
             className={`header-nav-tab ${activeReportTab === 'radar' ? 'active' : ''}`}
             onClick={() => setActiveReportTab('radar')}
           >
             Dependencias
+          </button>
+          <button
+            className={`header-nav-tab ${activeReportTab === 'competencia' ? 'active' : ''}`}
+            onClick={() => setActiveReportTab('competencia')}
+          >
+            Competencia
           </button>
         </div>
       </header>
@@ -700,6 +709,12 @@ function App() {
           </section>
         )}
           </>
+        ) : activeReportTab === 'competencia' ? (
+          <CompetenciaSection
+            compTab={compTab} setCompTab={setCompTab}
+            compNetwork={compNetwork} setCompNetwork={setCompNetwork}
+            formatNumber={formatNumber}
+          />
         ) : (
           <DependenciasDashboard />
         )}
@@ -713,6 +728,111 @@ function App() {
           </p>
         </footer>
 
+      </div>
+    </div>
+  );
+}
+
+// ─── Competencia Section ────────────────────────────────────────────────────
+const NET_CONFIG = {
+  facebook:  { label: 'Facebook',  color: '#1877f2', bg: '#e7f0fd' },
+  instagram: { label: 'Instagram', color: '#e1306c', bg: '#fce8f1' },
+  tiktok:    { label: 'TikTok',    color: '#ee1d52', bg: '#fff0f3' },
+  twitter:   { label: 'X/Twitter', color: '#1d9bf0', bg: '#e7f5fe' },
+};
+
+function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
+  const networks = ['facebook', 'instagram', 'tiktok', 'twitter'];
+
+  const localSorted = [...competition_data.localMedia]
+    .filter(m => m[compNetwork] != null)
+    .sort((a, b) => (b[compNetwork] || 0) - (a[compNetwork] || 0));
+
+  const estadosSorted = [...competition_data.estados]
+    .filter(e => e[compNetwork] != null)
+    .sort((a, b) => (b[compNetwork] || 0) - (a[compNetwork] || 0));
+
+  const activeData = compTab === 'local' ? localSorted : estadosSorted;
+  const nameKey    = compTab === 'local' ? 'name' : 'estado';
+  const maxVal     = activeData[0]?.[compNetwork] || 1;
+  const net        = NET_CONFIG[compNetwork];
+
+  return (
+    <div className="py-2">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
+          <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
+          Análisis de Competencia
+        </h2>
+        <p className="text-slate-400 text-xs mt-0.5 ml-4">
+          Actualización semanal (lunes) · Última actualización: {competition_data.lastUpdated}
+        </p>
+      </div>
+
+      {/* Tab + Network selectors */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="sub-tabs-container">
+          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab === 'local'   ? 'active' : ''}`}>Medios Locales Morelos</button>
+          <button onClick={() => setCompTab('estados')} className={`sub-tab-btn ${compTab === 'estados' ? 'active' : ''}`}>Quadratín por Estado</button>
+        </div>
+        <div className="sub-tabs-container">
+          {networks.map(n => (
+            <button key={n} onClick={() => setCompNetwork(n)} className={`sub-tab-btn ${compNetwork === n ? 'active' : ''}`}
+              style={compNetwork === n ? { backgroundColor: NET_CONFIG[n].color, color: '#fff', borderColor: NET_CONFIG[n].color } : {}}>
+              {NET_CONFIG[n].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Ranking bars */}
+      <div className="corp-card">
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+          <h3 className="font-bold font-outfit text-[#003366] text-sm">
+            Seguidores en <span style={{ color: net.color }}>{net.label}</span>
+            {' '}— {compTab === 'local' ? 'Medios Locales Morelos' : 'Red Quadratín por Estado'}
+          </h3>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: net.color, backgroundColor: net.bg }}>
+            {activeData.length} medios
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {activeData.map((item, idx) => {
+            const val  = item[compNetwork] || 0;
+            const pct  = (val / maxVal) * 100;
+            const isUs = item.isUs;
+            return (
+              <div key={idx} className={`rounded-lg p-2.5 ${isUs ? 'border-2' : 'border border-slate-100'}`}
+                style={isUs ? { borderColor: net.color, backgroundColor: net.bg } : { backgroundColor: '#f8fafc' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold w-5 text-center rounded"
+                      style={{ color: isUs ? net.color : '#94a3b8', backgroundColor: isUs ? net.bg : '#f1f5f9' }}>
+                      {idx + 1}
+                    </span>
+                    <span className={`text-xs font-bold ${isUs ? '' : 'text-slate-700'}`}
+                      style={isUs ? { color: net.color } : {}}>
+                      {item[nameKey]} {isUs ? '← Nosotros' : ''}
+                    </span>
+                  </div>
+                  <span className={`text-sm font-extrabold font-outfit`} style={{ color: isUs ? net.color : '#374151' }}>
+                    {formatNumber(val)}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%`, backgroundColor: isUs ? net.color : '#cbd5e1' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-[10px] text-slate-400 mt-4 pt-3 border-t border-slate-100">
+          Datos obtenidos via RapidAPI (Instagram, TikTok, Twitter) y Facebook Scraper API. Se actualiza cada lunes automáticamente.
+        </p>
       </div>
     </div>
   );

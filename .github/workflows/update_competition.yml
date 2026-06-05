@@ -1,0 +1,40 @@
+name: Weekly Competition Update
+
+on:
+  schedule:
+    # Every Monday at 8:00 AM Central Time (UTC-6) -> 14:00 UTC
+    - cron: '0 14 * * 1'
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+jobs:
+  update-competition:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch competition data
+        env:
+          FB_KEY: ${{ secrets.FB_SCRAPER_KEY }}
+          RAP_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: node update_competition.js
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/competition.js
+          if git diff --staged --quiet; then
+            echo "No changes in competition data. Skipping commit."
+          else
+            git commit -m "chore: Auto-update competition data [skip ci]"
+            git push origin main
+          fi
