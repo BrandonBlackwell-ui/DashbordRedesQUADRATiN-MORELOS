@@ -751,145 +751,193 @@ function NetLogo({ network, size = 18 }) {
   return logos[network] || null;
 }
 
+const RACE_GRADIENTS = [
+  'linear-gradient(90deg,#06b6d4,#10b981)',
+  'linear-gradient(90deg,#f59e0b,#fde047)',
+  'linear-gradient(90deg,#ec4899,#f43f5e)',
+  'linear-gradient(90deg,#8b5cf6,#6366f1)',
+  'linear-gradient(90deg,#0ea5e9,#38bdf8)',
+  'linear-gradient(90deg,#14b8a6,#34d399)',
+  'linear-gradient(90deg,#f97316,#fb923c)',
+  'linear-gradient(90deg,#a855f7,#c084fc)',
+];
+const US_GRADIENT = 'linear-gradient(90deg,#ff6600,#ff9500)';
+
+function Avatar({ name, isUs, size = 44 }) {
+  const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  const colors = ['#1877f2','#e1306c','#ee1d52','#1d9bf0','#16a34a','#9333ea','#dc2626','#0891b2'];
+  const color  = isUs ? '#ff6600' : colors[name.charCodeAt(0) % colors.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: isUs ? US_GRADIENT : `linear-gradient(135deg,${color}cc,${color})`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      border: isUs ? '3px solid #ff6600' : '2px solid #e2e8f0',
+      boxShadow: isUs ? '0 0 0 3px #ff660030' : '0 2px 6px rgba(0,0,0,0.12)',
+      color: '#fff', fontWeight: 800, fontSize: size * 0.32, fontFamily: 'Outfit,sans-serif',
+      letterSpacing: '-0.5px',
+    }}>
+      {initials}
+    </div>
+  );
+}
+
 function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
-  const networks = ['facebook', 'instagram', 'tiktok', 'twitter'];
+  const networks   = ['facebook','instagram','tiktok','twitter'];
   const sourceData = compTab === 'local' ? competition_data.localMedia : competition_data.estados;
   const nameKey    = compTab === 'local' ? 'name' : 'estado';
+  const net        = NET_CONFIG[compNetwork];
 
   const activeData = [...sourceData]
     .filter(m => m[compNetwork] != null)
     .sort((a, b) => (b[compNetwork] || 0) - (a[compNetwork] || 0));
 
-  const maxVal = activeData[0]?.[compNetwork] || 1;
-  const net    = NET_CONFIG[compNetwork];
+  const maxVal  = activeData[0]?.[compNetwork] || 1;
+  const usIdx   = activeData.findIndex(m => m.isUs);
+  const usItem  = activeData[usIdx];
 
   return (
     <div className="py-2">
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
         <div>
           <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
             <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
-            Análisis de Competencia
+            Carrera de Seguidores
           </h2>
           <p className="text-slate-400 text-xs mt-0.5 ml-4">
-            Actualización semanal (lunes) · {competition_data.lastUpdated}
+            {compTab === 'local' ? 'Medios Locales de Morelos' : 'Red Quadratín Nacional'} · Actualización semanal · {competition_data.lastUpdated}
           </p>
         </div>
         <div className="sub-tabs-container">
-          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab === 'local'   ? 'active' : ''}`}>Medios Locales Morelos</button>
-          <button onClick={() => setCompTab('estados')} className={`sub-tab-btn ${compTab === 'estados' ? 'active' : ''}`}>Quadratín Nacional</button>
+          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab==='local'   ?'active':''}`}>Medios Locales</button>
+          <button onClick={() => setCompTab('estados')} className={`sub-tab-btn ${compTab==='estados' ?'active':''}`}>Quadratín Nacional</button>
         </div>
       </div>
 
-      {/* Network selector — same pill style as platform tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      {/* Network pills */}
+      <div className="flex flex-wrap gap-2 mb-5">
         {networks.map(n => {
-          const cfg = NET_CONFIG[n];
-          const active = compNetwork === n;
+          const cfg = NET_CONFIG[n]; const active = compNetwork === n;
           return (
             <button key={n} onClick={() => setCompNetwork(n)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold border-2 transition-all duration-200 hover:scale-105"
-              style={active
-                ? { backgroundColor: cfg.color, color: '#fff', borderColor: cfg.color, boxShadow: `0 4px 12px ${cfg.color}40` }
-                : { backgroundColor: '#ffffff', color: cfg.color, borderColor: cfg.color + '50' }}>
-              <NetLogo network={n} size={15} />
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200 hover:scale-105"
+              style={active ? { background: cfg.color, color:'#fff', borderColor: cfg.color, boxShadow:`0 4px 14px ${cfg.color}50` }
+                            : { background:'#fff', color: cfg.color, borderColor: cfg.color+'50' }}>
+              <NetLogo network={n} size={14} />
               {cfg.label}
             </button>
           );
         })}
       </div>
 
-      {/* Cards grid — same style as Rendimiento por Plataforma */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {activeData.map((item, idx) => {
-          const val   = item[compNetwork] || 0;
-          const pct   = (val / maxVal) * 100;
-          const isUs  = item.isUs;
-          const barColor = isUs ? net.color : pct >= 80 ? '#16a34a' : pct >= 40 ? '#f97316' : '#94a3b8';
-          const barBg    = isUs ? net.bg    : pct >= 80 ? '#f0fdf4' : pct >= 40 ? '#fff7ed' : '#f8fafc';
-          const medal    = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
+      {/* Our position callout */}
+      {usItem && (
+        <div className="mb-5 rounded-2xl p-4 flex items-center gap-4"
+          style={{ background: 'linear-gradient(135deg,#fff7ed,#ffedd5)', border: '2px solid #ff6600' }}>
+          <Avatar name={usItem[nameKey]} isUs size={52} />
+          <div className="flex-1">
+            <div className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Quadratín Morelos — Nuestra posición</div>
+            <div className="text-2xl font-extrabold font-outfit text-orange-600">{formatNumber(usItem[compNetwork] || 0)}</div>
+            <div className="text-xs text-orange-500">seguidores en {net.label}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-extrabold font-outfit" style={{ color:'#ff6600' }}>#{usIdx + 1}</div>
+            <div className="text-[10px] text-orange-400 font-semibold">de {activeData.length} medios</div>
+            {usIdx === 0
+              ? <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-block mt-1">🏆 Líder</span>
+              : <span className="text-[9px] text-orange-500 font-semibold block mt-1">{formatNumber((activeData[0][compNetwork]||0) - (usItem[compNetwork]||0))} para el liderato</span>
+            }
+          </div>
+        </div>
+      )}
 
-          return (
-            <div key={idx} className="corp-card"
-              style={isUs ? { borderColor: net.color, borderWidth: 2, borderStyle: 'solid' } : {}}>
+      {/* Race chart */}
+      <div className="corp-card">
+        {/* Title row */}
+        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
+          <NetLogo network={compNetwork} size={20} />
+          <span className="font-bold font-outfit text-[#003366] text-sm flex-1">
+            Ranking {net.label}
+          </span>
+          <span className="text-[10px] text-slate-400 font-semibold">
+            Líder: {formatNumber(maxVal)}
+          </span>
+        </div>
 
-              {/* Header: logo + rank */}
-              <div className="flex justify-between items-start mb-3">
-                <NetLogo network={compNetwork} size={28} />
-                <div className="flex items-center gap-1.5">
-                  {medal && <span className="text-lg leading-none">{medal}</span>}
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: isUs ? net.bg : '#f1f5f9', color: isUs ? net.color : '#64748b' }}>
-                    #{idx + 1}
-                  </span>
+        {/* Rows */}
+        <div className="space-y-3">
+          {activeData.map((item, idx) => {
+            const val   = item[compNetwork] || 0;
+            const pct   = (val / maxVal) * 100;
+            const isUs  = item.isUs;
+            const grad  = isUs ? US_GRADIENT : (RACE_GRADIENTS[idx % RACE_GRADIENTS.length]);
+            const medals = ['🥇','🥈','🥉'];
+
+            return (
+              <div key={idx}
+                className="rounded-2xl transition-all duration-300"
+                style={isUs
+                  ? { padding:'12px 14px', background:'linear-gradient(135deg,#fff7ed,#fff)', border:'2px solid #ff6600', boxShadow:'0 4px 20px #ff660020' }
+                  : { padding:'10px 14px', background:'#f8fafc', border:'1px solid #f1f5f9' }}>
+
+                <div className="flex items-center gap-3 mb-2.5">
+                  {/* Rank */}
+                  <div className="w-8 text-center flex-shrink-0">
+                    {idx < 3
+                      ? <span className="text-xl leading-none">{medals[idx]}</span>
+                      : <span className="text-sm font-extrabold text-slate-400">#{idx+1}</span>}
+                  </div>
+
+                  {/* Avatar */}
+                  <Avatar name={item[nameKey]} isUs={isUs} size={isUs ? 42 : 36} />
+
+                  {/* Name */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold truncate" style={{ color: isUs ? '#ff6600' : '#1e293b' }}>
+                        {item[nameKey]}
+                      </span>
+                      {isUs && (
+                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+                          style={{ background: US_GRADIENT }}>
+                          NOSOTROS 🏁
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Value */}
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-extrabold font-outfit text-sm" style={{ color: isUs ? '#ff6600' : '#1e293b' }}>
+                      {formatNumber(val)}
+                    </div>
+                    <div className="text-[10px] font-bold" style={{ color: isUs ? '#f97316' : '#94a3b8' }}>
+                      {pct.toFixed(0)}%
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Name & count */}
-              <div className="mb-1">
-                <h3 className="text-sm font-bold font-outfit text-slate-500 leading-tight">{item[nameKey]}</h3>
-                <div className="text-2xl font-extrabold mt-0.5 font-outfit tracking-tight"
-                  style={{ color: isUs ? net.color : '#003366' }}>
-                  {formatNumber(val)}
-                </div>
-                <div className="text-[11px] text-slate-400">seguidores en {net.label}</div>
-              </div>
-
-              {/* vs líder */}
-              <div className="mt-4 space-y-3 pt-3 border-t border-slate-100">
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-slate-400 flex items-center gap-0.5">
-                    <Target size={11} /> {idx === 0 ? 'Líder del ranking' : `vs líder (${formatNumber(maxVal)})`}
-                  </span>
-                  <span className="font-bold text-sm px-1.5 py-0.5 rounded-md"
-                    style={{ color: barColor, backgroundColor: barBg }}>
-                    {pct.toFixed(1)}%
-                  </span>
-                </div>
-
-                {/* Bar */}
-                <div className="progress-bar-container">
-                  <div className="h-full transition-all duration-700"
-                    style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }} />
-                </div>
-
-                {/* Badge */}
-                <div className="text-right">
-                  {isUs ? (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: net.bg, color: net.color, border: `1px solid ${net.color}40` }}>
-                      <Award size={9} /> Quadratín Morelos
-                    </span>
-                  ) : idx === 0 ? (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-amber-700 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
-                      Líder
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-slate-400">
-                      {formatNumber(maxVal - val)} menos que el líder
+                {/* Race bar */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-full overflow-hidden" style={{ height: isUs ? 14 : 10, background:'#e2e8f0' }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width:`${pct}%`, background: grad, boxShadow: isUs ? '0 2px 8px #ff660040' : 'none' }} />
+                  </div>
+                  {isUs && idx > 0 && (
+                    <span className="text-[9px] text-orange-400 font-semibold flex-shrink-0 whitespace-nowrap">
+                      −{formatNumber((activeData[0][compNetwork]||0) - val)} al #1
                     </span>
                   )}
-                </div>
-
-                {/* Bottom info box */}
-                <div className="bg-[#f8f9fa] border border-[#e5e7eb] rounded-lg p-2 space-y-0.5 text-[10px]">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Posición:</span>
-                    <span className="font-bold text-slate-700">#{idx + 1} de {activeData.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Diferencia vs #1:</span>
-                    <span className="font-bold" style={{ color: idx === 0 ? '#16a34a' : '#dc2626' }}>
-                      {idx === 0 ? 'Líder' : `−${formatNumber(maxVal - val)}`}
-                    </span>
-                  </div>
+                  {idx === 0 && (
+                    <span className="text-[9px] text-emerald-600 font-bold flex-shrink-0">🏆</span>
+                  )}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
