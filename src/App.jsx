@@ -922,8 +922,92 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
         </div>
       </div>
 
-      {/* Chart card */}
-      <div className="corp-card">
+      {/* ── Quadratín Nacional: horizontal bar chart ── */}
+      {compTab === 'estados' && (() => {
+        const barData = [...competition_data.estados]
+          .filter(e => e[compNetwork] != null)
+          .sort((a, b) => (b[compNetwork]||0) - (a[compNetwork]||0));
+        const maxBar = barData[0]?.[compNetwork] || 1;
+        return (
+          <div className="corp-card">
+            {/* Network pills inside card */}
+            <div className="flex flex-wrap gap-2 mb-5 pb-4 border-b border-slate-100">
+              {['facebook','instagram','tiktok','twitter'].map(n => {
+                const cfg = NET_CONFIG[n]; const active = compNetwork === n;
+                return (
+                  <button key={n} onClick={() => setCompNetwork(n)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
+                    style={active ? { background: cfg.color, color:'#fff', borderColor: cfg.color } : { background:'#fff', color: cfg.color, borderColor: cfg.color+'50' }}>
+                    <NetLogo network={n} size={14} />
+                    {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="space-y-2.5">
+              {barData.map((item, idx) => {
+                const val   = item[compNetwork] || 0;
+                const pct   = (val / maxBar) * 100;
+                const isUs  = item.isUs;
+                const grad  = isUs ? US_GRADIENT : RACE_GRADIENTS[idx % RACE_GRADIENTS.length];
+                const host  = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
+                const fav   = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+                return (
+                  <div key={idx} className="flex items-center gap-3 group"
+                    style={isUs ? { background:'#fff7ed', borderRadius: 12, padding:'6px 8px', border:'1.5px solid #ff660040' } : { padding:'4px 8px' }}>
+                    {/* Rank */}
+                    <span className="text-[10px] font-extrabold w-6 text-center flex-shrink-0"
+                      style={{ color: idx===0?'#f59e0b':idx===1?'#94a3b8':idx===2?'#cd7c2f':'#cbd5e1' }}>
+                      #{idx+1}
+                    </span>
+                    {/* Avatar */}
+                    <div style={{ width:34, height:34, borderRadius:'50%', border:`2.5px solid ${isUs?'#ff6600':'#e2e8f0'}`, overflow:'hidden', background:'#fff', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', boxShadow: isUs?'0 0 0 3px #ff660020':undefined }}>
+                      {fav ? <img src={fav} alt="" style={{ width:22, height:22, objectFit:'contain' }} /> : <span style={{ fontSize:11, fontWeight:800, color: isUs?'#ff6600':'#94a3b8' }}>{item.estado.substring(0,2).toUpperCase()}</span>}
+                    </div>
+                    {/* Name */}
+                    <span className="text-xs font-semibold flex-shrink-0 w-24 truncate" style={{ color: isUs?'#ff6600':'#334155' }}>
+                      {item.estado}
+                    </span>
+                    {/* Bar */}
+                    <div className="flex-1 rounded-full overflow-hidden" style={{ height: isUs?14:10, background:'#f1f5f9', minWidth:0 }}>
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width:`${pct}%`, background: grad, boxShadow: isUs?'0 2px 8px #ff660030':undefined }} />
+                    </div>
+                    {/* Value */}
+                    <div className="text-right flex-shrink-0 w-20">
+                      <div className="text-xs font-extrabold font-outfit" style={{ color: isUs?'#ff6600':'#1e293b' }}>
+                        {new Intl.NumberFormat('es-MX').format(val)}
+                      </div>
+                      <div className="text-[9px] font-semibold" style={{ color: isUs?'#f97316':'#94a3b8' }}>
+                        {pct.toFixed(0)}%
+                      </div>
+                    </div>
+                    {/* NOSOTROS badge */}
+                    {isUs && <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0" style={{ background: US_GRADIENT }}>NOSOTROS</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Medios Locales: line chart ── */}
+      {compTab === 'local' && <div className="corp-card">
+        {/* Network pills */}
+        <div className="flex flex-wrap gap-2 mb-5 pb-4 border-b border-slate-100">
+          {['facebook','instagram','tiktok','twitter'].map(n => {
+            const cfg = NET_CONFIG[n]; const active = compNetwork === n;
+            return (
+              <button key={n} onClick={() => setCompNetwork(n)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
+                style={active ? { background: cfg.color, color:'#fff', borderColor: cfg.color } : { background:'#fff', color: cfg.color, borderColor: cfg.color+'50' }}>
+                <NetLogo network={n} size={14} />
+                {cfg.label}
+              </button>
+            );
+          })}
+        </div>
         <ResponsiveContainer width="100%" height={500}>
           <LineChart data={chartData}
             margin={{ top: 24, right: 220, left: 10, bottom: 16 }}>
@@ -1008,8 +1092,8 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
             })}
           </LineChart>
         </ResponsiveContainer>
+      </div>}
 
-      </div>
     </div>
   );
 }
