@@ -60,6 +60,37 @@ export const supabase = {
     }
   },
 
+  // ── Monthly Close Tracking ──────────────────────────────────────
+  saveMonthlyCierre: async (year, month, data) => {
+    // data = { facebook, instagram, twitter, tiktok, youtube }
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/monthly_closes`, {
+        method: 'POST',
+        headers: { ...getHeaders(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify({ year, month, ...data })
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
+    } catch (e) {
+      console.error('Error saving monthly close:', e);
+      return null;
+    }
+  },
+
+  getMonthlyCierres: async () => {
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/monthly_closes?select=*&order=year.asc,month.asc`,
+        { headers: getHeaders() }
+      );
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
+    } catch (e) {
+      console.error('Error fetching monthly closes:', e);
+      return [];
+    }
+  },
+
   deleteTask: async (id) => {
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {

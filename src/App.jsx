@@ -71,6 +71,34 @@ function App() {
 
   // Extract history and configurations from data
   const history = qm_data.history;
+
+  // Auto-save monthly close on last day of each month
+  useEffect(() => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const isLastDayOfMonth = tomorrow.getMonth() !== today.getMonth();
+    if (!isLastDayOfMonth) return;
+
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 1-12
+    const lastEntry = history[history.length - 1];
+    const storageKey = `cierre_saved_${year}_${month}`;
+    if (localStorage.getItem(storageKey)) return; // already saved today
+
+    supabase.saveMonthlyCierre(year, month, {
+      facebook:  lastEntry.facebook  ?? null,
+      instagram: lastEntry.instagram ?? null,
+      twitter:   lastEntry.twitter   ?? null,
+      tiktok:    lastEntry.tiktok    ?? null,
+      youtube:   lastEntry.youtube   ?? null,
+    }).then(result => {
+      if (result) {
+        localStorage.setItem(storageKey, '1');
+        console.log(`✅ Cierre mensual guardado: ${year}-${month}`);
+      }
+    });
+  }, []);
   const goals = qm_data.goals;
   const monthly_goals = qm_data.monthly_goals;
   const monthly_real = qm_data.monthly_real;
@@ -78,6 +106,10 @@ function App() {
   // Last entry with full data for totals (skip youtube-only gaps)
   const lastEntry = history[history.length - 1];
   const initialEntry = history[0]; // 1 Jan
+
+  // Last month-end close (entries labeled "Cierre ...")
+  const cierreEntries = history.filter(h => h.label && h.label.startsWith('Cierre'));
+  const lastMonthClose = cierreEntries[cierreEntries.length - 1] || initialEntry;
 
   // Platform configuration objects
   const platforms = {
@@ -391,13 +423,13 @@ function App() {
                     {/* Historical Baseline comparisons */}
                     <div className="bg-[#f8f9fa] border border-[#e5e7eb] rounded-lg p-2 space-y-0.5 text-[10px]">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Inicio (9 Ene):</span>
+                        <span className="text-slate-400">Inicio (1 Ene):</span>
                         <span className="text-slate-700 font-bold">{formatNumber(item.initial)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Cierre PDF (9 May):</span>
-                        <span className="text-slate-700 font-bold">
-                          {formatNumber(history[1] ? history[1][key] : item.initial)}
+                        <span className="text-slate-400">Cierre {lastMonthClose.label?.replace('Cierre ', '') || 'May'}:</span>
+                        <span className="font-bold" style={{ color: (lastMonthClose[key] ?? 0) >= item.initial ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                          {formatNumber(lastMonthClose[key] ?? item.initial)}
                         </span>
                       </div>
                     </div>
