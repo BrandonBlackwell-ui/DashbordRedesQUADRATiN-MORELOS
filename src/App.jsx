@@ -753,17 +753,8 @@ function NetLogo({ network, size = 18 }) {
 
 function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
   const networks = ['facebook', 'instagram', 'tiktok', 'twitter'];
-
   const sourceData = compTab === 'local' ? competition_data.localMedia : competition_data.estados;
   const nameKey    = compTab === 'local' ? 'name' : 'estado';
-
-  // Summary cards: our rank per network
-  const ourSummary = networks.map(n => {
-    const sorted = [...sourceData].filter(m => m[n] != null).sort((a, b) => b[n] - a[n]);
-    const rank = sorted.findIndex(m => m.isUs) + 1;
-    const us = sourceData.find(m => m.isUs);
-    return { n, rank, total: sorted.length, val: us?.[n] || null };
-  });
 
   const activeData = [...sourceData]
     .filter(m => m[compNetwork] != null)
@@ -772,142 +763,133 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
   const maxVal = activeData[0]?.[compNetwork] || 1;
   const net    = NET_CONFIG[compNetwork];
 
-  const medalColor = (idx) => idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#cd7c2f' : null;
-
   return (
     <div className="py-2">
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
             <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
             Análisis de Competencia
           </h2>
           <p className="text-slate-400 text-xs mt-0.5 ml-4">
-            Actualización semanal · {competition_data.lastUpdated}
+            Actualización semanal (lunes) · {competition_data.lastUpdated}
           </p>
         </div>
         <div className="sub-tabs-container">
-          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab === 'local'   ? 'active' : ''}`}>Medios Locales</button>
+          <button onClick={() => setCompTab('local')}   className={`sub-tab-btn ${compTab === 'local'   ? 'active' : ''}`}>Medios Locales Morelos</button>
           <button onClick={() => setCompTab('estados')} className={`sub-tab-btn ${compTab === 'estados' ? 'active' : ''}`}>Quadratín Nacional</button>
         </div>
       </div>
 
-      {/* Summary cards — our position per network */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        {ourSummary.map(({ n, rank, total, val }) => {
-          const cfg = NET_CONFIG[n];
-          return (
-            <button key={n}
-              onClick={() => setCompNetwork(n)}
-              className="corp-card text-left transition-all duration-200 hover:scale-[1.02]"
-              style={compNetwork === n ? { borderColor: cfg.color, borderWidth: 2, borderStyle: 'solid' } : {}}>
-              <div className="flex items-center justify-between mb-2">
-                <NetLogo network={n} size={22} />
-                {rank > 0 && (
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
-                    style={{ backgroundColor: cfg.bg, color: cfg.color }}>
-                    #{rank} de {total}
-                  </span>
-                )}
-              </div>
-              <div className="text-lg font-extrabold font-outfit" style={{ color: val ? cfg.color : '#94a3b8' }}>
-                {val ? formatNumber(val) : '—'}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium">{cfg.label}</div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Network selector pills */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Network selector — same pill style as platform tabs */}
+      <div className="flex flex-wrap gap-2 mb-6">
         {networks.map(n => {
           const cfg = NET_CONFIG[n];
           const active = compNetwork === n;
           return (
             <button key={n} onClick={() => setCompNetwork(n)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold border-2 transition-all duration-200 hover:scale-105"
               style={active
-                ? { backgroundColor: cfg.color, color: '#fff', borderColor: cfg.color }
-                : { backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.color + '40' }}>
-              <NetLogo network={n} size={14} />
+                ? { backgroundColor: cfg.color, color: '#fff', borderColor: cfg.color, boxShadow: `0 4px 12px ${cfg.color}40` }
+                : { backgroundColor: '#ffffff', color: cfg.color, borderColor: cfg.color + '50' }}>
+              <NetLogo network={n} size={15} />
               {cfg.label}
             </button>
           );
         })}
       </div>
 
-      {/* Ranking chart */}
-      <div className="corp-card">
-        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
-          <NetLogo network={compNetwork} size={20} />
-          <h3 className="font-bold font-outfit text-[#003366] text-sm flex-1">
-            Ranking {net.label} · {compTab === 'local' ? 'Medios Locales Morelos' : 'Red Quadratín Nacional'}
-          </h3>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: net.color, backgroundColor: net.bg }}>
-            {activeData.length} medios
-          </span>
-        </div>
+      {/* Cards grid — same style as Rendimiento por Plataforma */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {activeData.map((item, idx) => {
+          const val   = item[compNetwork] || 0;
+          const pct   = (val / maxVal) * 100;
+          const isUs  = item.isUs;
+          const barColor = isUs ? net.color : pct >= 80 ? '#16a34a' : pct >= 40 ? '#f97316' : '#94a3b8';
+          const barBg    = isUs ? net.bg    : pct >= 80 ? '#f0fdf4' : pct >= 40 ? '#fff7ed' : '#f8fafc';
+          const medal    = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
 
-        <div className="space-y-2.5">
-          {activeData.map((item, idx) => {
-            const val  = item[compNetwork] || 0;
-            const pct  = (val / maxVal) * 100;
-            const isUs = item.isUs;
-            const medal = medalColor(idx);
-            return (
-              <div key={idx}
-                className="rounded-xl p-3 transition-all"
-                style={isUs
-                  ? { background: `linear-gradient(135deg, ${net.bg} 0%, #ffffff 100%)`, border: `2px solid ${net.color}` }
-                  : { backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
-                <div className="flex items-center gap-3 mb-2">
-                  {/* Rank badge */}
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-extrabold"
-                    style={medal
-                      ? { backgroundColor: medal, color: '#fff' }
-                      : isUs
-                        ? { backgroundColor: net.color, color: '#fff' }
-                        : { backgroundColor: '#e2e8f0', color: '#64748b' }}>
-                    {idx < 3 ? ['🥇','🥈','🥉'][idx] : idx + 1}
-                  </div>
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`text-xs font-bold truncate ${isUs ? '' : 'text-slate-700'}`}
-                        style={isUs ? { color: net.color } : {}}>
-                        {item[nameKey]}
-                      </span>
-                      {isUs && (
-                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white flex-shrink-0"
-                          style={{ backgroundColor: net.color }}>
-                          NOSOTROS
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {/* Value */}
-                  <span className="text-sm font-extrabold font-outfit flex-shrink-0"
-                    style={{ color: isUs ? net.color : '#374151' }}>
-                    {formatNumber(val)}
+          return (
+            <div key={idx} className="corp-card"
+              style={isUs ? { borderColor: net.color, borderWidth: 2, borderStyle: 'solid' } : {}}>
+
+              {/* Header: logo + rank */}
+              <div className="flex justify-between items-start mb-3">
+                <NetLogo network={compNetwork} size={28} />
+                <div className="flex items-center gap-1.5">
+                  {medal && <span className="text-lg leading-none">{medal}</span>}
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: isUs ? net.bg : '#f1f5f9', color: isUs ? net.color : '#64748b' }}>
+                    #{idx + 1}
                   </span>
                 </div>
-                {/* Bar */}
-                <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: isUs ? `${net.color}20` : '#e2e8f0' }}>
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, backgroundColor: isUs ? net.color : '#94a3b8' }} />
-                </div>
-                {/* Percentage vs leader */}
-                {idx > 0 && (
-                  <div className="text-right mt-1">
-                    <span className="text-[9px] text-slate-400">{pct.toFixed(0)}% del líder</span>
-                  </div>
-                )}
               </div>
-            );
-          })}
-        </div>
+
+              {/* Name & count */}
+              <div className="mb-1">
+                <h3 className="text-sm font-bold font-outfit text-slate-500 leading-tight">{item[nameKey]}</h3>
+                <div className="text-2xl font-extrabold mt-0.5 font-outfit tracking-tight"
+                  style={{ color: isUs ? net.color : '#003366' }}>
+                  {formatNumber(val)}
+                </div>
+                <div className="text-[11px] text-slate-400">seguidores en {net.label}</div>
+              </div>
+
+              {/* vs líder */}
+              <div className="mt-4 space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-400 flex items-center gap-0.5">
+                    <Target size={11} /> {idx === 0 ? 'Líder del ranking' : `vs líder (${formatNumber(maxVal)})`}
+                  </span>
+                  <span className="font-bold text-sm px-1.5 py-0.5 rounded-md"
+                    style={{ color: barColor, backgroundColor: barBg }}>
+                    {pct.toFixed(1)}%
+                  </span>
+                </div>
+
+                {/* Bar */}
+                <div className="progress-bar-container">
+                  <div className="h-full transition-all duration-700"
+                    style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }} />
+                </div>
+
+                {/* Badge */}
+                <div className="text-right">
+                  {isUs ? (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: net.bg, color: net.color, border: `1px solid ${net.color}40` }}>
+                      <Award size={9} /> Quadratín Morelos
+                    </span>
+                  ) : idx === 0 ? (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-amber-700 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+                      Líder
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">
+                      {formatNumber(maxVal - val)} menos que el líder
+                    </span>
+                  )}
+                </div>
+
+                {/* Bottom info box */}
+                <div className="bg-[#f8f9fa] border border-[#e5e7eb] rounded-lg p-2 space-y-0.5 text-[10px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Posición:</span>
+                    <span className="font-bold text-slate-700">#{idx + 1} de {activeData.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Diferencia vs #1:</span>
+                    <span className="font-bold" style={{ color: idx === 0 ? '#16a34a' : '#dc2626' }}>
+                      {idx === 0 ? 'Líder' : `−${formatNumber(maxVal - val)}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
