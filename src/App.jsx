@@ -351,8 +351,8 @@ function App() {
               const progressPct = (item.current / item.goal) * 100;
               const remaining = item.goal - item.current;
               const isGoalMet = item.current >= item.goal;
-              const perfColor = isGoalMet ? '#16a34a' : progressPct >= 80 ? '#ff6600' : progressPct >= 50 ? '#f97316' : '#dc2626';
-              const perfBg    = isGoalMet ? '#f0fdf4' : progressPct >= 80 ? '#fff7ed' : progressPct >= 50 ? '#fff7ed' : '#fef2f2';
+              const perfColor = progressPct >= 80 ? '#16a34a' : progressPct >= 50 ? '#f97316' : '#dc2626';
+              const perfBg    = progressPct >= 80 ? '#f0fdf4' : progressPct >= 50 ? '#fff7ed' : '#fef2f2';
 
               return (
                 <div key={key} className="corp-card">
