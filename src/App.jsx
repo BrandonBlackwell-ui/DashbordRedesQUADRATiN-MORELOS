@@ -978,9 +978,6 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                       <div className="text-xs font-extrabold font-outfit" style={{ color: isUs?'#ff6600':'#1e293b' }}>
                         {new Intl.NumberFormat('es-MX').format(val)}
                       </div>
-                      <div className="text-[9px] font-semibold" style={{ color: isUs?'#f97316':'#94a3b8' }}>
-                        {pct.toFixed(0)}%
-                      </div>
                     </div>
                     {/* NOSOTROS badge */}
                     {isUs && <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0" style={{ background: US_GRADIENT }}>NOSOTROS</span>}
