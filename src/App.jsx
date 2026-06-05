@@ -5,6 +5,7 @@ import { competition_data } from './competition';
 import { supabase } from './supabase';
 import {
   ComposedChart,
+  LineChart,
   Area,
   Line,
   XAxis,
@@ -805,19 +806,84 @@ function Avatar({ name, isUs, logo, size = 44 }) {
   );
 }
 
+const COMP_COLORS = ['#06b6d4','#f59e0b','#ec4899','#8b5cf6','#10b981','#ef4444','#3b82f6','#14b8a6','#a855f7','#f97316'];
+
 function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
   const networks   = ['facebook','instagram','tiktok','twitter'];
+  const netLabels  = ['Facebook','Instagram','TikTok','Twitter'];
   const sourceData = compTab === 'local' ? competition_data.localMedia : competition_data.estados;
   const nameKey    = compTab === 'local' ? 'name' : 'estado';
   const net        = NET_CONFIG[compNetwork];
 
-  const activeData = [...sourceData]
-    .filter(m => m[compNetwork] != null)
-    .sort((a, b) => (b[compNetwork] || 0) - (a[compNetwork] || 0));
+  // For estados: limit to top 9 + always include us
+  let displayData = [...sourceData];
+  if (compTab === 'estados') {
+    const sorted = [...sourceData].sort((a, b) => (b[compNetwork]||0) - (a[compNetwork]||0));
+    const top9 = sorted.slice(0, 9);
+    const us = sourceData.find(m => m.isUs);
+    if (us && !top9.find(m => m.isUs)) top9.push(us);
+    displayData = top9.filter(Boolean);
+  }
 
-  const maxVal  = activeData[0]?.[compNetwork] || 1;
-  const usIdx   = activeData.findIndex(m => m.isUs);
-  const usItem  = activeData[usIdx];
+  // Normalize each network to % of its own leader so all 4 fit same scale
+  const chartData = networks.map((n, ni) => {
+    const maxN = Math.max(...displayData.map(m => m[n] || 0));
+    const pt = { network: netLabels[ni] };
+    displayData.forEach((item, i) => {
+      const v = item[n];
+      pt[`p${i}`] = v ? Math.round((v / maxN) * 100) : null;
+      pt[`v${i}`] = v;
+    });
+    return pt;
+  });
+
+  const usIdx = displayData.findIndex(m => m.isUs);
+
+  // Custom end-point dot: avatar circle + name/value label only at last point
+  const makeDot = (item, itemIdx, color, isUs) => (props) => {
+    const { cx, cy, index } = props;
+    const isLast = index === networks.length - 1;
+    const val = chartData[index]?.[`v${itemIdx}`];
+    if (!val) return <g key={`d-${itemIdx}-${index}`} />;
+
+    if (!isLast) {
+      return <circle key={`d-${itemIdx}-${index}`} cx={cx} cy={cy} r={isUs ? 4 : 3} fill={color} stroke="#fff" strokeWidth={1.5} />;
+    }
+
+    // End label — avatar + name + value
+    const r    = isUs ? 20 : 15;
+    const host = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
+    const faviconUrl = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+    const shortName  = (item[nameKey] || '').split(' ').slice(0, 2).join(' ');
+    const clipId     = `cp-${compTab}-${itemIdx}`;
+
+    return (
+      <g key={`d-${itemIdx}-${index}`}>
+        {isUs && <circle cx={cx} cy={cy} r={r + 5} fill={color} fillOpacity={0.12} />}
+        <circle cx={cx} cy={cy} r={r + 1} fill="#fff" />
+        <circle cx={cx} cy={cy} r={r} fill="#fff" stroke={color} strokeWidth={isUs ? 3 : 2} />
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={cx} cy={cy} r={r - 2} />
+          </clipPath>
+        </defs>
+        {faviconUrl && (
+          <image href={faviconUrl} x={cx - (r-2)} y={cy - (r-2)}
+            width={(r-2)*2} height={(r-2)*2}
+            clipPath={`url(#${clipId})`}
+            preserveAspectRatio="xMidYMid meet" />
+        )}
+        <text x={cx + r + 8} y={cy - 4} fontSize={isUs ? 12 : 10}
+          fontWeight={isUs ? 800 : 600} fill={color} fontFamily="Outfit,sans-serif">
+          {shortName}
+        </text>
+        <text x={cx + r + 8} y={cy + 10} fontSize={isUs ? 11 : 9}
+          fontWeight={700} fill={color} fillOpacity={0.8} fontFamily="Outfit,sans-serif">
+          {new Intl.NumberFormat('es-MX').format(val)}
+        </text>
+      </g>
+    );
+  };
 
   return (
     <div className="py-2">
@@ -830,7 +896,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
             Carrera de Seguidores
           </h2>
           <p className="text-slate-400 text-xs mt-0.5 ml-4">
-            {compTab === 'local' ? 'Medios Locales de Morelos' : 'Red Quadratín Nacional'} · Actualización semanal · {competition_data.lastUpdated}
+            {compTab === 'local' ? 'Medios Locales · Morelos' : 'Red Quadratín · Nacional'} · Última actualización: {competition_data.lastUpdated}
           </p>
         </div>
         <div className="sub-tabs-container">
@@ -839,131 +905,51 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
         </div>
       </div>
 
-      {/* Network pills */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {networks.map(n => {
-          const cfg = NET_CONFIG[n]; const active = compNetwork === n;
-          return (
-            <button key={n} onClick={() => setCompNetwork(n)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all duration-200 hover:scale-105"
-              style={active ? { background: cfg.color, color:'#fff', borderColor: cfg.color, boxShadow:`0 4px 14px ${cfg.color}50` }
-                            : { background:'#fff', color: cfg.color, borderColor: cfg.color+'50' }}>
-              <NetLogo network={n} size={14} />
-              {cfg.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Chart card */}
+      <div className="corp-card overflow-x-auto">
+        <div style={{ minWidth: 520 }}>
+          <LineChart width={860} height={420} data={chartData}
+            margin={{ top: 20, right: 200, left: 10, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis dataKey="network" tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b', fontFamily: 'Outfit,sans-serif' }}
+              tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+            <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`}
+              tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}
+              label={{ value: '% del líder por red', angle: -90, position: 'insideLeft', offset: 10, fontSize: 10, fill: '#94a3b8' }} />
+            <Tooltip
+              formatter={(value, name) => {
+                const idx = parseInt(name.replace('p',''));
+                const item = displayData[idx];
+                return [
+                  `${value}% del líder`,
+                  item ? (item[nameKey] || '') : name
+                ];
+              }}
+              contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+            />
 
-      {/* Our position callout */}
-      {usItem && (
-        <div className="mb-5 rounded-2xl p-4 flex items-center gap-4"
-          style={{ background: 'linear-gradient(135deg,#fff7ed,#ffedd5)', border: '2px solid #ff6600' }}>
-          <Avatar name={usItem[nameKey]} isUs logo={usItem.logo} size={52} />
-          <div className="flex-1">
-            <div className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Quadratín Morelos — Nuestra posición</div>
-            <div className="text-2xl font-extrabold font-outfit text-orange-600">{formatNumber(usItem[compNetwork] || 0)}</div>
-            <div className="text-xs text-orange-500">seguidores en {net.label}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-extrabold font-outfit" style={{ color:'#ff6600' }}>#{usIdx + 1}</div>
-            <div className="text-[10px] text-orange-400 font-semibold">de {activeData.length} medios</div>
-            {usIdx === 0
-              ? <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-block mt-1">Líder</span>
-              : <span className="text-[9px] text-orange-500 font-semibold block mt-1">{formatNumber((activeData[0][compNetwork]||0) - (usItem[compNetwork]||0))} para el liderato</span>
-            }
-          </div>
-        </div>
-      )}
-
-      {/* Race chart */}
-      <div className="corp-card">
-        {/* Title row */}
-        <div className="flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
-          <NetLogo network={compNetwork} size={20} />
-          <span className="font-bold font-outfit text-[#003366] text-sm flex-1">
-            Ranking {net.label}
-          </span>
-          <span className="text-[10px] text-slate-400 font-semibold">
-            Líder: {formatNumber(maxVal)}
-          </span>
+            {displayData.map((item, i) => {
+              const isUs = item.isUs;
+              const color = isUs ? '#ff6600' : COMP_COLORS[(i < usIdx ? i : i - 1) % COMP_COLORS.length];
+              return (
+                <Line key={i}
+                  dataKey={`p${i}`}
+                  stroke={color}
+                  strokeWidth={isUs ? 3.5 : 1.8}
+                  strokeOpacity={isUs ? 1 : 0.7}
+                  dot={makeDot(item, i, color, isUs)}
+                  activeDot={false}
+                  connectNulls={false}
+                  animationDuration={900}
+                />
+              );
+            })}
+          </LineChart>
         </div>
 
-        {/* Rows */}
-        <div className="space-y-3">
-          {activeData.map((item, idx) => {
-            const val   = item[compNetwork] || 0;
-            const pct   = (val / maxVal) * 100;
-            const isUs  = item.isUs;
-            const grad  = isUs ? US_GRADIENT : (RACE_GRADIENTS[idx % RACE_GRADIENTS.length]);
-
-            return (
-              <div key={idx}
-                className="rounded-2xl transition-all duration-300"
-                style={isUs
-                  ? { padding:'12px 14px', background:'linear-gradient(135deg,#fff7ed,#fff)', border:'2px solid #ff6600', boxShadow:'0 4px 20px #ff660020' }
-                  : { padding:'10px 14px', background:'#f8fafc', border:'1px solid #f1f5f9' }}>
-
-                <div className="flex items-center gap-3 mb-2.5">
-                  {/* Rank */}
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-extrabold"
-                    style={isUs
-                      ? { background: US_GRADIENT, color: '#fff' }
-                      : idx === 0 ? { backgroundColor: '#f59e0b', color: '#fff' }
-                      : idx === 1 ? { backgroundColor: '#94a3b8', color: '#fff' }
-                      : idx === 2 ? { backgroundColor: '#cd7c2f', color: '#fff' }
-                      : { backgroundColor: '#e2e8f0', color: '#64748b' }}>
-                    #{idx+1}
-                  </div>
-
-                  {/* Avatar */}
-                  <Avatar name={item[nameKey]} isUs={isUs} logo={item.logo} size={isUs ? 42 : 36} />
-
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-bold truncate" style={{ color: isUs ? '#ff6600' : '#1e293b' }}>
-                        {item[nameKey]}
-                      </span>
-                      {isUs && (
-                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0"
-                          style={{ background: US_GRADIENT }}>
-                          NOSOTROS
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Value */}
-                  <div className="text-right flex-shrink-0">
-                    <div className="font-extrabold font-outfit text-sm" style={{ color: isUs ? '#ff6600' : '#1e293b' }}>
-                      {formatNumber(val)}
-                    </div>
-                    <div className="text-[10px] font-bold" style={{ color: isUs ? '#f97316' : '#94a3b8' }}>
-                      {pct.toFixed(0)}%
-                    </div>
-                  </div>
-                </div>
-
-                {/* Race bar */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 rounded-full overflow-hidden" style={{ height: isUs ? 14 : 10, background:'#e2e8f0' }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width:`${pct}%`, background: grad, boxShadow: isUs ? '0 2px 8px #ff660040' : 'none' }} />
-                  </div>
-                  {isUs && idx > 0 && (
-                    <span className="text-[9px] text-orange-400 font-semibold flex-shrink-0 whitespace-nowrap">
-                      −{formatNumber((activeData[0][compNetwork]||0) - val)} al #1
-                    </span>
-                  )}
-                  {idx === 0 && (
-                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0">Líder</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <p className="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">
+          El eje Y muestra el porcentaje relativo al líder de cada red. Ejemplo: 100% = líder en esa plataforma.
+        </p>
       </div>
     </div>
   );
