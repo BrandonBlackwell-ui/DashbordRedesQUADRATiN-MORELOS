@@ -11,11 +11,12 @@ export const qm_data = {
     { "date": "2026-06-04", "label": "Hoy", "instagram": 20583, "tiktok": 5854, "facebook": 81097, "twitter": 10635, "youtube": 216 }
   ],
 
-  // Goals per month per platform (Marzo–Mayo from the report)
+  // Goals per month per platform (Marzo–Junio from the report)
   "monthly_goals": {
     "marzo":  { "facebook": 93500,  "instagram": 4500,  "twitter": 12933, "tiktok": 2500,  "youtube": null },
     "abril":  { "facebook": 109000, "instagram": 9000,  "twitter": 15289, "tiktok": 5000,  "youtube": null },
-    "mayo":   { "facebook": 84000,  "instagram": 13500, "twitter": 15200, "tiktok": 7500,  "youtube": null }
+    "mayo":   { "facebook": 84000,  "instagram": 13500, "twitter": 15200, "tiktok": 7500,  "youtube": null },
+    "junio":  { "facebook": 87000,  "instagram": 18000, "twitter": 20000, "tiktok": 10000, "youtube": null }
   },
 
   // Monthly real closing numbers
@@ -27,12 +28,12 @@ export const qm_data = {
     "mayo":   { "facebook": 81024, "instagram": 19917, "twitter": 10628, "tiktok": 5794,  "youtube": 216  }
   },
 
-  // Current goals (mayo = latest)
+  // Current goals (junio = latest)
   "goals": {
-    "instagram": 13500,
-    "tiktok": 7500,
-    "facebook": 84000,
-    "twitter": 15200,
+    "instagram": 18000,
+    "tiktok": 10000,
+    "facebook": 87000,
+    "twitter": 20000,
     "youtube": null
   }
 };
