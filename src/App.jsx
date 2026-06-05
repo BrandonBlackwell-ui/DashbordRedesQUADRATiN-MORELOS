@@ -183,8 +183,6 @@ function App() {
     ? consolidadoChartData
     : buildChartData(selectedChartTab);
 
-  const activeColor = selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366');
-
   const activeNotes = qm_analysis[activeReportTab];
 
   // Table config
@@ -465,7 +463,7 @@ function App() {
               );
             })()}
 
-            {/* Dot Chart */}
+            {/* Recharts Composed Chart */}
             <div className="h-96 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
@@ -474,51 +472,93 @@ function App() {
                 >
                   <defs>
                     <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={activeColor} stopOpacity={0.10} />
-                      <stop offset="95%" stopColor={activeColor} stopOpacity={0.01} />
+                      <stop offset="5%"
+                        stopColor={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
+                        stopOpacity={0.25}
+                      />
+                      <stop offset="95%"
+                        stopColor={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
+                        stopOpacity={0.02}
+                      />
                     </linearGradient>
                   </defs>
 
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
 
-                  <XAxis dataKey="label" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} dy={6} />
-                  <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false}
-                    tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(0)}k` : val}
+                  <XAxis
+                    dataKey="label"
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={6}
+                  />
+                  <YAxis
+                    stroke="#9ca3af"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
                   />
 
                   <Tooltip
-                    contentStyle={{ backgroundColor:'#fff', borderColor: activeColor, borderRadius:'10px', fontSize:'12px', boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px' }}
-                    itemStyle={{ color:'#374151', fontWeight:600 }}
-                    labelStyle={{ color:'#6b7280', fontWeight:700, marginBottom:'4px' }}
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderColor: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366'),
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+                      padding: '10px 14px'
+                    }}
+                    itemStyle={{ color: '#374151', fontWeight: 600 }}
+                    labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
                     formatter={(value, name) => [
                       value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
-                      name === 'real' ? '● Real' : '● Meta'
+                      name === 'real' ? '🟢 Seguidores Reales' : '■ Meta Mensual'
                     ]}
                   />
 
                   <Legend
-                    formatter={(value) => value === 'real'
-                      ? <span style={{ color: activeColor, fontWeight:700, fontSize:'11px' }}>&#9679; Seguidores Reales</span>
-                      : <span style={{ color:'#94a3b8', fontWeight:600, fontSize:'11px' }}>&#9679; Meta Mensual</span>
+                    formatter={(value) =>
+                      value === 'real'
+                        ? <span style={{ color: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366'), fontWeight: 700, fontSize: '11px' }}>&#9679; Seguidores Reales</span>
+                        : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>- - Meta Mensual</span>
                     }
-                    wrapperStyle={{ paddingTop:'10px' }}
+                    wrapperStyle={{ paddingTop: '10px' }}
                   />
 
+                  {/* Colored Area — Real */}
                   <Area
-                    type="monotone" dataKey="real" name="real"
-                    stroke={activeColor} strokeWidth={1.5}
-                    fill="url(#realGradient)" fillOpacity={1}
-                    dot={{ r: 9, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
-                    activeDot={{ r: 12, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
-                    connectNulls={true} animationDuration={900}
+                    type="monotone"
+                    dataKey="real"
+                    name="real"
+                    stroke={selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366')}
+                    strokeWidth={2.5}
+                    fill="url(#realGradient)"
+                    fillOpacity={1}
+                    dot={{
+                      r: 5,
+                      fill: selectedChartTab === 'consolidado' ? '#ff6600' : (platforms[selectedChartTab]?.color || '#003366'),
+                      stroke: '#ffffff',
+                      strokeWidth: 2
+                    }}
+                    activeDot={{ r: 7, strokeWidth: 2, stroke: '#ffffff' }}
+                    connectNulls={true}
+                    animationDuration={900}
                   />
 
+                  {/* Gray dashed Line — Meta */}
                   <Line
-                    type="monotone" dataKey="meta" name="meta"
-                    stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 5"
-                    dot={{ r: 7, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
-                    activeDot={{ r: 9, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
-                    connectNulls={true} animationDuration={900}
+                    type="monotone"
+                    dataKey="meta"
+                    name="meta"
+                    stroke="#94a3b8"
+                    strokeWidth={1.8}
+                    strokeDasharray="6 4"
+                    dot={{ r: 4, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
+                    activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2 }}
+                    connectNulls={true}
+                    animationDuration={900}
                   />
 
                 </ComposedChart>
