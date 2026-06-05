@@ -869,7 +869,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
             <div className="text-3xl font-extrabold font-outfit" style={{ color:'#ff6600' }}>#{usIdx + 1}</div>
             <div className="text-[10px] text-orange-400 font-semibold">de {activeData.length} medios</div>
             {usIdx === 0
-              ? <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-block mt-1">🏆 Líder</span>
+              ? <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-block mt-1">Líder</span>
               : <span className="text-[9px] text-orange-500 font-semibold block mt-1">{formatNumber((activeData[0][compNetwork]||0) - (usItem[compNetwork]||0))} para el liderato</span>
             }
           </div>
@@ -896,7 +896,6 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
             const pct   = (val / maxVal) * 100;
             const isUs  = item.isUs;
             const grad  = isUs ? US_GRADIENT : (RACE_GRADIENTS[idx % RACE_GRADIENTS.length]);
-            const medals = ['🥇','🥈','🥉'];
 
             return (
               <div key={idx}
@@ -907,10 +906,14 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
 
                 <div className="flex items-center gap-3 mb-2.5">
                   {/* Rank */}
-                  <div className="w-8 text-center flex-shrink-0">
-                    {idx < 3
-                      ? <span className="text-xl leading-none">{medals[idx]}</span>
-                      : <span className="text-sm font-extrabold text-slate-400">#{idx+1}</span>}
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-extrabold"
+                    style={isUs
+                      ? { background: US_GRADIENT, color: '#fff' }
+                      : idx === 0 ? { backgroundColor: '#f59e0b', color: '#fff' }
+                      : idx === 1 ? { backgroundColor: '#94a3b8', color: '#fff' }
+                      : idx === 2 ? { backgroundColor: '#cd7c2f', color: '#fff' }
+                      : { backgroundColor: '#e2e8f0', color: '#64748b' }}>
+                    #{idx+1}
                   </div>
 
                   {/* Avatar */}
@@ -925,7 +928,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                       {isUs && (
                         <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0"
                           style={{ background: US_GRADIENT }}>
-                          NOSOTROS 🏁
+                          NOSOTROS
                         </span>
                       )}
                     </div>
@@ -954,7 +957,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                     </span>
                   )}
                   {idx === 0 && (
-                    <span className="text-[9px] text-emerald-600 font-bold flex-shrink-0">🏆</span>
+                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0">Líder</span>
                   )}
                 </div>
               </div>
