@@ -229,9 +229,6 @@ function App() {
           >
             Dependencias
           </button>
-          <button style={{ background: 'red', color: 'white', padding: '4px 12px', borderRadius: 6, fontWeight: 700 }}>
-            LOGIN TEST
-          </button>
         </div>
       </header>
 
@@ -477,81 +474,51 @@ function App() {
                 >
                   <defs>
                     <linearGradient id="realGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={activeColor} stopOpacity={0.15} />
+                      <stop offset="5%"  stopColor={activeColor} stopOpacity={0.10} />
                       <stop offset="95%" stopColor={activeColor} stopOpacity={0.01} />
                     </linearGradient>
                   </defs>
 
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
 
-                  <XAxis
-                    dataKey="label"
-                    stroke="#9ca3af"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    dy={6}
-                  />
-                  <YAxis
-                    stroke="#9ca3af"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
+                  <XAxis dataKey="label" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} dy={6} />
+                  <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false}
+                    tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(0)}k` : val}
                   />
 
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      borderColor: activeColor,
-                      borderRadius: '10px',
-                      fontSize: '12px',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
-                      padding: '10px 14px'
-                    }}
-                    itemStyle={{ color: '#374151', fontWeight: 600 }}
-                    labelStyle={{ color: '#6b7280', fontWeight: 700, marginBottom: '4px' }}
+                    contentStyle={{ backgroundColor:'#fff', borderColor: activeColor, borderRadius:'10px', fontSize:'12px', boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px' }}
+                    itemStyle={{ color:'#374151', fontWeight:600 }}
+                    labelStyle={{ color:'#6b7280', fontWeight:700, marginBottom:'4px' }}
                     formatter={(value, name) => [
                       value != null ? new Intl.NumberFormat('es-MX').format(value) : '—',
-                      name === 'real' ? '● Seguidores Reales' : '● Meta Mensual'
+                      name === 'real' ? '● Real' : '● Meta'
                     ]}
                   />
 
                   <Legend
-                    formatter={(value) =>
-                      value === 'real'
-                        ? <span style={{ color: activeColor, fontWeight: 700, fontSize: '11px' }}>&#9679; Seguidores Reales</span>
-                        : <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '11px' }}>&#9679; Meta Mensual</span>
+                    formatter={(value) => value === 'real'
+                      ? <span style={{ color: activeColor, fontWeight:700, fontSize:'11px' }}>&#9679; Seguidores Reales</span>
+                      : <span style={{ color:'#94a3b8', fontWeight:600, fontSize:'11px' }}>&#9679; Meta Mensual</span>
                     }
-                    wrapperStyle={{ paddingTop: '10px' }}
+                    wrapperStyle={{ paddingTop:'10px' }}
                   />
 
-                  {/* Area — fondo sutil del color de la plataforma */}
                   <Area
-                    type="monotone"
-                    dataKey="real"
-                    name="real"
-                    stroke={activeColor}
-                    strokeWidth={0}
-                    fill="url(#realGradient)"
-                    fillOpacity={1}
+                    type="monotone" dataKey="real" name="real"
+                    stroke={activeColor} strokeWidth={1.5}
+                    fill="url(#realGradient)" fillOpacity={1}
                     dot={{ r: 9, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
                     activeDot={{ r: 12, fill: activeColor, stroke: '#ffffff', strokeWidth: 2.5 }}
-                    connectNulls={true}
-                    animationDuration={900}
+                    connectNulls={true} animationDuration={900}
                   />
 
-                  {/* Meta — dots grises */}
                   <Line
-                    type="monotone"
-                    dataKey="meta"
-                    name="meta"
-                    stroke="#94a3b8"
-                    strokeWidth={0}
+                    type="monotone" dataKey="meta" name="meta"
+                    stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 5"
                     dot={{ r: 7, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
                     activeDot={{ r: 9, fill: '#94a3b8', stroke: '#ffffff', strokeWidth: 2 }}
-                    connectNulls={true}
-                    animationDuration={900}
+                    connectNulls={true} animationDuration={900}
                   />
 
                 </ComposedChart>
