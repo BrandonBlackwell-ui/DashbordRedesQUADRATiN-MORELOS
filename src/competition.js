@@ -1,5 +1,5 @@
 // Competition data — auto-fetched weekly (Mondays) via GitHub Actions
-// Last updated: 2026-06-09
+// Last updated: 2026-06-08
 
 export const competition_data = {
 
@@ -37,5 +37,5 @@ export const competition_data = {
     { estado: 'Hispano (EE.UU.)',             logo: 'https://quadratin.com/favicon.ico',                  facebook: 6800,    instagram: 3754,  tiktok: 5243,  twitter: 218 },
   ],
 
-  lastUpdated: '2026-06-09',
+  lastUpdated: '2026-06-08',
 };
