@@ -192,6 +192,41 @@ export const supabase = {
     }
   },
 
+  // ── 7. TIKTOK VIDEOS — Contenido semanal ──────────────────────────────────
+  // Tabla: tiktok_videos
+  // Columnas: fetched_date, month, video_id, description, views, likes,
+  //           comments, shares, bookmarks, duration, posted_at
+  saveTikTokVideos: async (rows) => {
+    try {
+      return await post('tiktok_videos', rows, 'resolution=merge-duplicates,return=minimal');
+    } catch (e) {
+      console.error('saveTikTokVideos:', e.message); return false;
+    }
+  },
+
+  getTikTokVideos: async (month) => {
+    // month: 'YYYY-MM' — if null returns all, ordered by views desc
+    try {
+      let q = 'order=views.desc';
+      if (month) q += `&month=eq.${month}`;
+      return await get('tiktok_videos', q);
+    } catch (e) {
+      console.error('getTikTokVideos:', e.message); return [];
+    }
+  },
+
+  getLatestTikTokFetch: async () => {
+    // Returns the most recent batch (latest fetched_date)
+    try {
+      const dates = await get('tiktok_videos', 'select=fetched_date&order=fetched_date.desc&limit=1');
+      if (!dates?.length) return [];
+      const latestDate = dates[0].fetched_date;
+      return await get('tiktok_videos', `fetched_date=eq.${latestDate}&order=views.desc`);
+    } catch (e) {
+      console.error('getLatestTikTokFetch:', e.message); return [];
+    }
+  },
+
   // ── LEGACY: competition_history (proyecto anterior) ────────────────────────
   // Mantenido por compatibilidad — el nuevo flujo usa competition_local/estados
   saveCompetitionSnapshot: async (rows) => {

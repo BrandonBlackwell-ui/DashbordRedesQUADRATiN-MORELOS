@@ -1,0 +1,25 @@
+name: Weekly Content Metrics
+
+on:
+  schedule:
+    # Every Monday at 8 AM CT (14:00 UTC)
+    - cron: '0 14 * * 1'
+  workflow_dispatch:   # allow manual trigger
+
+jobs:
+  fetch-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch TikTok video metrics
+        env:
+          RAP_KEY:      ${{ secrets.RAP_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: node update_content.js

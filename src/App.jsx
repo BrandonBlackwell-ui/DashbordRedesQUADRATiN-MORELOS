@@ -6,6 +6,8 @@ import { supabase } from './supabase';
 import {
   ComposedChart,
   LineChart,
+  BarChart,
+  Bar,
   Area,
   Line,
   XAxis,
@@ -14,7 +16,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Legend,
-  ReferenceLine
+  ReferenceLine,
+  Cell
 } from 'recharts';
 import {
   TrendingUp,
@@ -271,6 +274,12 @@ function App() {
             onClick={() => setActiveReportTab('competencia')}
           >
             Competencia
+          </button>
+          <button
+            className={`header-nav-tab ${activeReportTab === 'analisis' ? 'active' : ''}`}
+            onClick={() => setActiveReportTab('analisis')}
+          >
+            Análisis
           </button>
         </div>
       </header>
@@ -716,6 +725,8 @@ function App() {
             compNetwork={compNetwork} setCompNetwork={setCompNetwork}
             formatNumber={formatNumber}
           />
+        ) : activeReportTab === 'analisis' ? (
+          <AnalisisSection formatNumber={formatNumber} />
         ) : (
           <DependenciasDashboard />
         )}
@@ -1049,6 +1060,331 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
         );
       })()}
 
+    </div>
+  );
+}
+
+// ─── Análisis Section ────────────────────────────────────────────────────────
+
+function AnalisisSection({ formatNumber }) {
+  const [activeNet, setActiveNet]     = useState('tiktok');
+  const [videos,    setVideos]        = useState([]);
+  const [analysis,  setAnalysis]      = useState(null);   // latest saved analysis
+  const [loading,   setLoading]       = useState(true);
+  const [analyzing, setAnalyzing]     = useState(false);
+  const [aiError,   setAiError]       = useState('');
+  const [fetchedDate, setFetchedDate] = useState('');
+
+  // Load TikTok videos + latest analysis from Supabase
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      supabase.getLatestTikTokFetch(),
+      supabase.getAnalysis('tiktok_content', 1),
+    ]).then(([vids, analyses]) => {
+      setVideos(vids || []);
+      if (vids?.length) setFetchedDate(vids[0].fetched_date || '');
+      if (analyses?.length) setAnalysis(analyses[0]);
+      setLoading(false);
+    });
+  }, []);
+
+  // ── Summary stats ────────────────────────────────────────────────────────
+  const totalViews    = videos.reduce((s, v) => s + (v.views    || 0), 0);
+  const totalLikes    = videos.reduce((s, v) => s + (v.likes    || 0), 0);
+  const totalComments = videos.reduce((s, v) => s + (v.comments || 0), 0);
+  const totalShares   = videos.reduce((s, v) => s + (v.shares   || 0), 0);
+  const avgViews      = videos.length ? Math.round(totalViews / videos.length) : 0;
+  const engRate       = totalViews > 0
+    ? ((totalLikes + totalComments + totalShares) / totalViews * 100).toFixed(1)
+    : '0';
+  const bestVideo     = videos[0]; // already sorted by views desc
+
+  // ── Chart data: top 10 videos by views ──────────────────────────────────
+  const chartData = videos.slice(0, 10).map((v, i) => ({
+    name: `V${i + 1}`,
+    views:    v.views    || 0,
+    likes:    v.likes    || 0,
+    comments: v.comments || 0,
+    shares:   v.shares   || 0,
+    label:    (v.description || 'Sin título').substring(0, 40),
+  }));
+
+  // ── AI Analysis handler ──────────────────────────────────────────────────
+  const handleAnalyze = async () => {
+    if (!videos.length) return;
+    setAnalyzing(true);
+    setAiError('');
+    try {
+      const now    = new Date();
+      const period = now.toLocaleString('es-MX', { month: 'long', year: 'numeric' });
+      const res    = await fetch('/api/analyze', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ network: activeNet, videos, period }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error del servidor');
+
+      // Save to Supabase analysis_log
+      const today = now.toISOString().split('T')[0];
+      await supabase.saveAnalysis(today, 'tiktok_content', {
+        text:        data.analysis,
+        stats:       data.stats,
+        model:       data.model,
+        generatedAt: now.toISOString(),
+        videoCount:  videos.length,
+      });
+      setAnalysis({ date: today, content: { text: data.analysis, stats: data.stats, model: data.model } });
+    } catch (e) {
+      setAiError(e.message || 'Error al generar análisis');
+    }
+    setAnalyzing(false);
+  };
+
+  // ── Render helpers ────────────────────────────────────────────────────────
+  const fmt = (n) => new Intl.NumberFormat('es-MX').format(n || 0);
+
+  const SUMMARY_CARDS = [
+    { label: 'Videos analizados', value: fmt(videos.length),  color: '#ee1d52', icon: '🎬' },
+    { label: 'Total vistas',      value: fmt(totalViews),      color: '#0ea5e9', icon: '👁'  },
+    { label: 'Promedio vistas',   value: fmt(avgViews),        color: '#8b5cf6', icon: '📊' },
+    { label: 'Engagement rate',   value: `${engRate}%`,        color: '#16a34a', icon: '💡' },
+  ];
+
+  // Custom tooltip for chart
+  const ChartTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const d = chartData.find(c => c.name === label);
+    return (
+      <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', maxWidth:260 }}>
+        <p style={{ fontSize:11, color:'#64748b', marginBottom:4 }}>{d?.label}</p>
+        {payload.map((p, i) => (
+          <div key={i} style={{ display:'flex', justifyContent:'space-between', gap:16, fontSize:12, fontWeight:700, color: p.fill }}>
+            <span>{p.name}</span><span>{fmt(p.value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="py-2">
+
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-bold font-outfit text-[#003366] flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#ee1d52] rounded-full inline-block" />
+            Análisis de Contenido
+          </h2>
+          <p className="text-slate-400 text-xs mt-0.5 ml-4">
+            Rendimiento de videos · Actualización semanal
+            {fetchedDate && ` · Último corte: ${fetchedDate}`}
+          </p>
+        </div>
+
+        {/* Network selector (TikTok only for now, more coming) */}
+        <div className="flex items-center gap-2">
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2 transition-all"
+            style={{ background:'#010101', color:'#fff', borderColor:'#010101' }}
+          >
+            <TikTokLogo className="" style={{ width:18, height:18 }} />
+            TikTok
+          </button>
+          <span className="text-xs text-slate-400 px-3 py-1 bg-slate-100 rounded-full">+ redes próximamente</span>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="corp-card flex items-center justify-center py-16 text-slate-400 text-sm">
+          Cargando datos de videos…
+        </div>
+      ) : videos.length === 0 ? (
+        /* ── Empty state ─────────────────────────────────────────── */
+        <div className="corp-card text-center py-16">
+          <div className="text-5xl mb-4">🎬</div>
+          <h3 className="text-base font-bold text-[#003366] mb-2">Sin datos aún</h3>
+          <p className="text-slate-400 text-sm max-w-sm mx-auto">
+            Los datos de videos se cargan automáticamente cada lunes via GitHub Actions.<br />
+            También puedes ejecutar manualmente:
+          </p>
+          <code className="mt-4 inline-block text-xs bg-slate-100 text-slate-600 px-4 py-2 rounded-lg font-mono">
+            node update_content.js
+          </code>
+        </div>
+      ) : (
+        <>
+          {/* ── Summary stat cards ─────────────────────────────────── */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {SUMMARY_CARDS.map((card, i) => (
+              <div key={i} className="corp-card" style={{ borderLeft:`4px solid ${card.color}`, paddingTop:16, paddingBottom:16 }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{card.icon}</span>
+                  <span className="text-xs text-slate-500 font-medium">{card.label}</span>
+                </div>
+                <div className="text-2xl font-extrabold font-outfit" style={{ color: card.color }}>
+                  {card.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Best video highlight ───────────────────────────────── */}
+          {bestVideo && (
+            <div className="corp-card mb-6" style={{ background:'linear-gradient(135deg,#fff7f8,#fff)', border:'1.5px solid #ee1d5230' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background:'linear-gradient(135deg,#ee1d52,#ff6600)' }}>
+                  <span className="text-white text-lg">🏆</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-extrabold text-[#ee1d52] uppercase tracking-wide">Mejor Video</span>
+                    {bestVideo.month && <span className="text-xs text-slate-400">· {bestVideo.month}</span>}
+                  </div>
+                  <p className="text-sm font-semibold text-[#003366] leading-snug line-clamp-2">
+                    {bestVideo.description || 'Sin descripción'}
+                  </p>
+                  <div className="flex flex-wrap gap-4 mt-2 text-xs text-slate-600">
+                    <span><strong style={{ color:'#0ea5e9' }}>{fmt(bestVideo.views)}</strong> vistas</span>
+                    <span><strong style={{ color:'#ee1d52' }}>{fmt(bestVideo.likes)}</strong> likes</span>
+                    <span><strong style={{ color:'#8b5cf6' }}>{fmt(bestVideo.comments)}</strong> comentarios</span>
+                    <span><strong style={{ color:'#16a34a' }}>{fmt(bestVideo.shares)}</strong> shares</span>
+                    {bestVideo.duration > 0 && <span><strong style={{ color:'#f59e0b' }}>{bestVideo.duration}s</strong> duración</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Bar chart: top 10 videos ───────────────────────────── */}
+          <div className="corp-card mb-6">
+            <h3 className="text-sm font-bold text-[#003366] mb-4">Top 10 Videos por Vistas</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily:'Outfit,sans-serif', fill:'#94a3b8' }} />
+                <YAxis tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} tick={{ fontSize:10, fill:'#94a3b8' }} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="views" name="Vistas" radius={[6,6,0,0]}>
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={i === 0 ? '#ee1d52' : `hsl(${220 + i * 12},70%,${60 - i * 2}%)`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* ── Video table ────────────────────────────────────────── */}
+          <div className="corp-card mb-6">
+            <h3 className="text-sm font-bold text-[#003366] mb-4">Todos los Videos</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left py-2 px-2 text-slate-400 font-semibold">#</th>
+                    <th className="text-left py-2 px-2 text-slate-400 font-semibold">Descripción</th>
+                    <th className="text-right py-2 px-2 text-slate-400 font-semibold">Vistas</th>
+                    <th className="text-right py-2 px-2 text-slate-400 font-semibold">Likes</th>
+                    <th className="text-right py-2 px-2 text-slate-400 font-semibold">Comentarios</th>
+                    <th className="text-right py-2 px-2 text-slate-400 font-semibold">Shares</th>
+                    <th className="text-right py-2 px-2 text-slate-400 font-semibold">Duración</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {videos.map((v, i) => (
+                    <tr key={v.video_id || i}
+                      className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                      style={i === 0 ? { background:'#fff7f8' } : {}}>
+                      <td className="py-2 px-2 font-bold text-slate-400">{i + 1}</td>
+                      <td className="py-2 px-2 text-slate-700 max-w-xs">
+                        <span className="line-clamp-2 block">{v.description || '—'}</span>
+                        {v.month && <span className="text-[10px] text-slate-400">{v.month}</span>}
+                      </td>
+                      <td className="py-2 px-2 text-right font-bold" style={{ color:'#0ea5e9' }}>{fmt(v.views)}</td>
+                      <td className="py-2 px-2 text-right font-semibold" style={{ color:'#ee1d52' }}>{fmt(v.likes)}</td>
+                      <td className="py-2 px-2 text-right text-slate-600">{fmt(v.comments)}</td>
+                      <td className="py-2 px-2 text-right text-slate-600">{fmt(v.shares)}</td>
+                      <td className="py-2 px-2 text-right text-slate-500">{v.duration ? `${v.duration}s` : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── AI Analysis ─────────────────────────────────────────── */}
+          <div className="corp-card" style={{ border:'1.5px solid #ff660030', background:'linear-gradient(135deg,#fffbf7,#fff)' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+              <div>
+                <h3 className="text-sm font-bold text-[#003366] flex items-center gap-2">
+                  <span className="text-lg">🤖</span>
+                  Análisis con Inteligencia Artificial
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Claude Opus analiza tus videos y da recomendaciones personalizadas
+                </p>
+              </div>
+              <button
+                onClick={handleAnalyze}
+                disabled={analyzing || !videos.length}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
+                style={{ background: analyzing ? '#94a3b8' : 'linear-gradient(135deg,#ff6600,#ff9500)',
+                  boxShadow: analyzing ? 'none' : '0 4px 15px #ff660040' }}
+              >
+                {analyzing ? (
+                  <>
+                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Analizando…
+                  </>
+                ) : (
+                  <>✨ Hacer Análisis</>
+                )}
+              </button>
+            </div>
+
+            {aiError && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+                {aiError}
+              </div>
+            )}
+
+            {analysis ? (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+                    style={{ background:'linear-gradient(135deg,#ff6600,#ff9500)' }}>
+                    {analysis.content?.model || 'claude-opus-4-5'}
+                  </span>
+                  <span className="text-xs text-slate-400">Generado el {analysis.date}</span>
+                  {analysis.content?.videoCount && (
+                    <span className="text-xs text-slate-400">· {analysis.content.videoCount} videos analizados</span>
+                  )}
+                </div>
+                <div className="prose prose-sm max-w-none">
+                  {(analysis.content?.text || '').split('\n').map((line, i) => {
+                    const isBold = line.startsWith('**') || line.match(/^\d+\.\s*\*\*/);
+                    const cleaned = line.replace(/\*\*/g, '');
+                    if (!cleaned.trim()) return <div key={i} className="h-2" />;
+                    return (
+                      <p key={i} className={`text-sm leading-relaxed mb-1 ${isBold ? 'font-bold text-[#003366]' : 'text-slate-700'}`}>
+                        {cleaned}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400 text-sm">
+                <p>Haz clic en <strong>Hacer Análisis</strong> para obtener recomendaciones personalizadas de Claude Opus.</p>
+                <p className="text-xs mt-2 text-slate-300">Requiere ANTHROPIC_API_KEY configurado en Vercel.</p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
