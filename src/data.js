@@ -9,7 +9,8 @@ export const qm_data = {
     { "date": "2026-05-09", "label": "Cierre May (PDF)", "instagram": 13800, "tiktok": 5652, "facebook": 81195, "twitter": 10610, "youtube": null },
     { "date": "2026-05-31", "label": "Cierre May", "instagram": 19917, "tiktok": 5794, "facebook": 81024, "twitter": 10628, "youtube": 216 },
     { "date": "2026-06-04", "label": "4 Jun", "instagram": 20583, "tiktok": 5854, "facebook": 81097, "twitter": 10635, "youtube": 216 },
-    { "date": "2026-06-05", "label": "Hoy", "instagram": 20818, "tiktok": 5868, "facebook": 81129, "twitter": 10636, "youtube": 216 }
+    { "date": "2026-06-05", "label": "5 Jun", "instagram": 20818, "tiktok": 5868, "facebook": 81129, "twitter": 10636, "youtube": 216 },
+    { "date": "2026-06-09", "label": "Hoy", "instagram": 21927, "tiktok": 6060, "facebook": 81000, "twitter": 10636, "youtube": 216 }
   ],
 
   // Goals per month per platform (Marzo–Junio from the report)

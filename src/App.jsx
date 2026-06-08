@@ -201,7 +201,7 @@ function App() {
     { label: 'Marzo', real: { facebook: 80479, instagram: 3936, twitter: 10584, tiktok: 2116 }, goal: { facebook: 93500, instagram: 4500, twitter: 12933, tiktok: 2500 } },
     { label: 'Abril', real: { facebook: 81025, instagram: 11904, twitter: 10603, tiktok: 5638 }, goal: { facebook: 109000, instagram: 9000, twitter: 15289, tiktok: 5000 } },
     { label: 'Mayo', real: { facebook: 81024, instagram: 19917, twitter: 10628, tiktok: 5794 }, goal: { facebook: 84000, instagram: 13500, twitter: 15200, tiktok: 7500 } },
-    { label: 'Junio', real: { facebook: 81129, instagram: 20818, twitter: 10636, tiktok: 5868 }, goal: { facebook: 87000, instagram: 18000, twitter: 20000, tiktok: 10000 } },
+    { label: 'Junio', real: { facebook: 81000, instagram: 21927, twitter: 10636, tiktok: 6060 }, goal: { facebook: 87000, instagram: 18000, twitter: 20000, tiktok: 10000 } },
   ];
 
   // Flatten chart data for recharts
