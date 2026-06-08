@@ -216,7 +216,6 @@ export const supabase = {
   },
 
   getLatestTikTokFetch: async () => {
-    // Returns the most recent batch (latest fetched_date)
     try {
       const dates = await get('tiktok_videos', 'select=fetched_date&order=fetched_date.desc&limit=1');
       if (!dates?.length) return [];
@@ -224,6 +223,46 @@ export const supabase = {
       return await get('tiktok_videos', `fetched_date=eq.${latestDate}&order=views.desc`);
     } catch (e) {
       console.error('getLatestTikTokFetch:', e.message); return [];
+    }
+  },
+
+  // ── 8. INSTAGRAM POSTS — Posts & Reels semanales ──────────────────────────
+  // Tabla: instagram_posts
+  // Columnas: fetched_date, month, post_id, type, description,
+  //           views, likes, comments, shares, saves, duration, posted_at
+  saveInstagramPosts: async (rows) => {
+    try {
+      return await post('instagram_posts', rows, 'resolution=merge-duplicates,return=minimal');
+    } catch (e) {
+      console.error('saveInstagramPosts:', e.message); return false;
+    }
+  },
+
+  getInstagramPosts: async (type, month) => {
+    // type: 'post' | 'reel' | null (all)
+    try {
+      let q = 'order=likes.desc';
+      if (type)  q += `&type=eq.${type}`;
+      if (month) q += `&month=eq.${month}`;
+      return await get('instagram_posts', q);
+    } catch (e) {
+      console.error('getInstagramPosts:', e.message); return [];
+    }
+  },
+
+  getLatestInstagramFetch: async (type) => {
+    // type: 'post' | 'reel'
+    try {
+      let q = 'select=fetched_date&order=fetched_date.desc&limit=1';
+      if (type) q += `&type=eq.${type}`;
+      const dates = await get('instagram_posts', q);
+      if (!dates?.length) return [];
+      const latestDate = dates[0].fetched_date;
+      let q2 = `fetched_date=eq.${latestDate}&order=likes.desc`;
+      if (type) q2 += `&type=eq.${type}`;
+      return await get('instagram_posts', q2);
+    } catch (e) {
+      console.error('getLatestInstagramFetch:', e.message); return [];
     }
   },
 
