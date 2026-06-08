@@ -8,8 +8,8 @@ const path  = require('path');
 
 const FB_KEY       = process.env.FB_KEY       || '4ba69eaa2amsh85583d0034b25cep1ebe37jsn4c3ca683070c';
 const RAP_KEY      = process.env.RAP_KEY      || 'ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988';
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rpggshwqdxbjhqyxjicv.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZ2dzaHdxZHhiamhxeXhqaWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1ODE2NzEsImV4cCI6MjA5NjE1NzY3MX0.8s0VEFUpBnVS_z0gWsDjEm0pZbxqSCDTPjUk9c9T5Sk';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uwcazgeemwspebmhntcm.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3Y2F6Z2VlbXdzcGVibWhudGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MjI1NzIsImV4cCI6MjA5NjQ5ODU3Mn0.f7HmfTR6l9exA1DGbM03n-sUAGOmNMRbLw9g3pGbhtY';
 
 function get(url, headers) {
   return new Promise((resolve) => {
@@ -92,61 +92,55 @@ async function fetchItem(def, nameKey) {
   return result;
 }
 
-// Save snapshot to Supabase competition_history table
-async function saveToSupabase(today, localMedia, estados) {
-  const rows = [
-    ...localMedia.map(m => ({
-      fetched_date: today,
-      type: 'local',
-      name: m.name,
-      facebook:  m.facebook  || null,
-      instagram: m.instagram || null,
-      tiktok:    m.tiktok    || null,
-      twitter:   m.twitter   || null,
-    })),
-    ...estados.map(e => ({
-      fetched_date: today,
-      type: 'estado',
-      name: e.estado,
-      facebook:  e.facebook  || null,
-      instagram: e.instagram || null,
-      tiktok:    e.tiktok    || null,
-      twitter:   e.twitter   || null,
-    })),
-  ];
-
+// Save rows to a Supabase table via REST API
+function supabasePost(table, rows) {
   return new Promise((resolve) => {
     const body = JSON.stringify(rows);
-    const url  = new URL(`${SUPABASE_URL}/rest/v1/competition_history`);
-    const options = {
-      hostname: url.hostname,
-      path: url.pathname,
-      method: 'POST',
+    const url  = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
+    const req  = https.request({
+      hostname: url.hostname, path: url.pathname, method: 'POST',
       headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal',
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal',
         'Content-Length': Buffer.byteLength(body),
       }
-    };
-    const req = https.request(options, res => {
+    }, res => {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log(`Supabase: ${rows.length} rows saved to competition_history`);
+          console.log(`  ✓ ${table}: ${Array.isArray(rows) ? rows.length : 1} filas guardadas`);
           resolve(true);
         } else {
-          console.error(`Supabase error ${res.statusCode}: ${data}`);
+          console.error(`  ✗ ${table} error ${res.statusCode}: ${data.substring(0, 200)}`);
           resolve(false);
         }
       });
     });
-    req.on('error', e => { console.error('Supabase request error:', e); resolve(false); });
+    req.on('error', e => { console.error(`  ✗ ${table} request error:`, e.message); resolve(false); });
     req.write(body);
     req.end();
   });
+}
+
+async function saveToSupabase(today, localMedia, estados) {
+  console.log('\n=== Guardando en Supabase ===');
+
+  // competition_local
+  const localRows = localMedia.map(m => ({
+    fetched_date: today, name: m.name,
+    facebook: m.facebook || null, instagram: m.instagram || null,
+    tiktok: m.tiktok || null,     twitter: m.twitter   || null,
+  }));
+  await supabasePost('competition_local', localRows);
+
+  // competition_estados
+  const estadosRows = estados.map(e => ({
+    fetched_date: today, estado: e.estado,
+    facebook: e.facebook || null, instagram: e.instagram || null,
+    tiktok: e.tiktok || null,     twitter: e.twitter    || null,
+  }));
+  await supabasePost('competition_estados', estadosRows);
 }
 
 async function main() {

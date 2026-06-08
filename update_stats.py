@@ -198,6 +198,58 @@ def get_twitter_followers():
         print(f"Twitter/X API Exception: {e}")
     return None
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://uwcazgeemwspebmhntcm.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3Y2F6Z2VlbXdzcGVibWhudGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MjI1NzIsImV4cCI6MjA5NjQ5ODU3Mn0.f7HmfTR6l9exA1DGbM03n-sUAGOmNMRbLw9g3pGbhtY")
+
+SUPA_HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal"
+}
+
+def supabase_post(table, payload):
+    """POST rows to a Supabase table."""
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            headers=SUPA_HEADERS,
+            json=payload,
+            timeout=15
+        )
+        if r.status_code in (200, 201, 204):
+            print(f"  Supabase {table}: guardado OK")
+            return True
+        else:
+            print(f"  Supabase {table} error {r.status_code}: {r.text[:200]}")
+            return False
+    except Exception as e:
+        print(f"  Supabase {table} excepcion: {e}")
+        return False
+
+def save_daily_followers_supabase(entry):
+    """Guarda los seguidores diarios de QM en la tabla daily_followers."""
+    print("Guardando seguidores diarios en Supabase...")
+    row = {
+        "date":      entry.get("date"),
+        "instagram": entry.get("instagram"),
+        "tiktok":    entry.get("tiktok"),
+        "facebook":  entry.get("facebook"),
+        "twitter":   entry.get("twitter"),
+        "youtube":   entry.get("youtube"),
+    }
+    supabase_post("daily_followers", row)
+
+def save_analysis_supabase(date_str, analysis_type, content):
+    """Guarda el análisis generado por Claude en la tabla analysis_log."""
+    print(f"Guardando análisis '{analysis_type}' en Supabase...")
+    row = {
+        "date":    date_str,
+        "type":    analysis_type,
+        "content": content,
+    }
+    supabase_post("analysis_log", row)
+
 def main():
     print(f"=== SOCIAL MEDIA UPDATER - {datetime.datetime.now()} ===")
     
@@ -295,8 +347,11 @@ def main():
     # Save back to src/data.js
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         f.write("export const qm_data = " + json.dumps(data, indent=2, ensure_ascii=False) + ";\n")
-        
+
     print("src/data.js updated successfully!")
+
+    # ── Guardar seguidores diarios en Supabase ────────────────────────────────
+    save_daily_followers_supabase(new_entry)
 
     # Generate dynamic Claude AI analysis
     generate_ai_analysis(data["history"], data["goals"])
@@ -394,6 +449,10 @@ def generate_ai_analysis(history, goals):
             with open(analysis_file, "w", encoding="utf-8") as f:
                 f.write("export const qm_analysis = " + json.dumps(full_analysis, indent=2, ensure_ascii=False) + ";\n")
             print("AI analysis generated and src/analysis.js updated successfully!")
+
+            # Guardar análisis en Supabase
+            today_str = datetime.date.today().isoformat()
+            save_analysis_supabase(today_str, "redes", full_analysis)
         else:
             print(f"Claude API Error {r.status_code}: {r.text}")
     except Exception as e:

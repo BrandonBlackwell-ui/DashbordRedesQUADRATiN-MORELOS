@@ -1,142 +1,204 @@
-const SUPABASE_URL = 'https://rpggshwqdxbjhqyxjicv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZ2dzaHdxZHhiamhxeXhqaWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1ODE2NzEsImV4cCI6MjA5NjE1NzY3MX0.8s0VEFUpBnVS_z0gWsDjEm0pZbxqSCDTPjUk9c9T5Sk';
+// ─── Supabase Client — Quadratín Morelos Dashboard ───────────────────────────
+// Nuevo proyecto: uwcazgeemwspebmhntcm
+// Tablas: daily_followers | competition_local | competition_estados | analysis_log | monthly_closes | tasks
 
-const getHeaders = () => ({
+const SUPABASE_URL = 'https://uwcazgeemwspebmhntcm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3Y2F6Z2VlbXdzcGVibWhudGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MjI1NzIsImV4cCI6MjA5NjQ5ODU3Mn0.f7HmfTR6l9exA1DGbM03n-sUAGOmNMRbLw9g3pGbhtY';
+
+const h = () => ({
   'apikey': SUPABASE_KEY,
   'Authorization': `Bearer ${SUPABASE_KEY}`,
   'Content-Type': 'application/json',
   'Prefer': 'return=representation'
 });
 
+const post = async (table, body, prefer = 'return=minimal') => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...h(), 'Prefer': prefer },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`[${table}] POST ${res.status}: ${await res.text()}`);
+  return prefer === 'return=minimal' ? true : await res.json();
+};
+
+const get = async (table, query = '') => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: h() });
+  if (!res.ok) throw new Error(`[${table}] GET ${res.status}: ${await res.text()}`);
+  return res.json();
+};
+
+const patch = async (table, filter, body) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method: 'PATCH', headers: h(), body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`[${table}] PATCH ${res.status}`);
+  return res.json();
+};
+
+const del = async (table, filter) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!res.ok) throw new Error(`[${table}] DELETE ${res.status}`);
+  return true;
+};
+
 export const supabase = {
-  getTasks: async () => {
+
+  // ── 1. SEGUIDORES DIARIOS — Quadratín Morelos ──────────────────────────────
+  // Tabla: daily_followers
+  // Columnas: date, instagram, tiktok, facebook, twitter, youtube
+  saveDailyFollowers: async (data) => {
+    // data = { date: '2026-06-08', instagram, tiktok, facebook, twitter, youtube }
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks?select=*&order=created_at.desc`, {
-        headers: getHeaders()
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
+      return await post('daily_followers', data, 'resolution=merge-duplicates,return=minimal');
     } catch (e) {
-      console.error("Error fetching tasks from Supabase:", e);
-      return [];
+      console.error('saveDailyFollowers:', e.message); return false;
     }
   },
 
-  addTask: async (title) => {
+  getDailyFollowers: async (from, to) => {
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          title,
-          status: 'pending'
-        })
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      return data[0] || null;
+      let q = 'order=date.asc';
+      if (from) q += `&date=gte.${from}`;
+      if (to)   q += `&date=lte.${to}`;
+      return await get('daily_followers', q);
     } catch (e) {
-      console.error("Error adding task to Supabase:", e);
-      return null;
+      console.error('getDailyFollowers:', e.message); return [];
     }
   },
 
-  completeTask: async (id) => {
+  // ── 2. COMPETENCIA LOCAL — Medios de Morelos ───────────────────────────────
+  // Tabla: competition_local
+  // Columnas: fetched_date, name, facebook, instagram, tiktok, twitter
+  saveCompetitionLocal: async (rows) => {
+    // rows = [{ fetched_date, name, facebook, instagram, tiktok, twitter }, ...]
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      return data[0] || null;
+      return await post('competition_local', rows);
     } catch (e) {
-      console.error("Error completing task in Supabase:", e);
-      return null;
+      console.error('saveCompetitionLocal:', e.message); return false;
     }
   },
 
-  // ── Monthly Close Tracking ──────────────────────────────────────
+  getCompetitionLocal: async (name) => {
+    try {
+      let q = 'order=fetched_date.asc';
+      if (name) q += `&name=eq.${encodeURIComponent(name)}`;
+      return await get('competition_local', q);
+    } catch (e) {
+      console.error('getCompetitionLocal:', e.message); return [];
+    }
+  },
+
+  // ── 3. COMPETENCIA ESTADOS — Red Quadratín Nacional ───────────────────────
+  // Tabla: competition_estados
+  // Columnas: fetched_date, estado, facebook, instagram, tiktok, twitter
+  saveCompetitionEstados: async (rows) => {
+    try {
+      return await post('competition_estados', rows);
+    } catch (e) {
+      console.error('saveCompetitionEstados:', e.message); return false;
+    }
+  },
+
+  getCompetitionEstados: async (estado) => {
+    try {
+      let q = 'order=fetched_date.asc';
+      if (estado) q += `&estado=eq.${encodeURIComponent(estado)}`;
+      return await get('competition_estados', q);
+    } catch (e) {
+      console.error('getCompetitionEstados:', e.message); return [];
+    }
+  },
+
+  // ── 4. ANÁLISIS IA — Logs de análisis generados por Claude ────────────────
+  // Tabla: analysis_log
+  // Columnas: date, type, content (jsonb)
+  saveAnalysis: async (date, type, content) => {
+    // type: 'redes' | 'competencia' | 'semanal'
+    // content: objeto JSON con el análisis
+    try {
+      return await post('analysis_log', { date, type, content });
+    } catch (e) {
+      console.error('saveAnalysis:', e.message); return false;
+    }
+  },
+
+  getAnalysis: async (type, limit = 10) => {
+    try {
+      let q = `order=date.desc&limit=${limit}`;
+      if (type) q += `&type=eq.${type}`;
+      return await get('analysis_log', q);
+    } catch (e) {
+      console.error('getAnalysis:', e.message); return [];
+    }
+  },
+
+  // ── 5. CIERRES MENSUALES — Quadratín Morelos ──────────────────────────────
+  // Tabla: monthly_closes
+  // Columnas: year, month, facebook, instagram, twitter, tiktok, youtube
   saveMonthlyCierre: async (year, month, data) => {
-    // data = { facebook, instagram, twitter, tiktok, youtube }
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/monthly_closes`, {
-        method: 'POST',
-        headers: { ...getHeaders(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
-        body: JSON.stringify({ year, month, ...data })
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
+      return await post('monthly_closes', { year, month, ...data },
+        'resolution=merge-duplicates,return=minimal');
     } catch (e) {
-      console.error('Error saving monthly close:', e);
-      return null;
+      console.error('saveMonthlyCierre:', e.message); return null;
     }
   },
 
   getMonthlyCierres: async () => {
     try {
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/monthly_closes?select=*&order=year.asc,month.asc`,
-        { headers: getHeaders() }
-      );
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
+      return await get('monthly_closes', 'order=year.asc,month.asc');
     } catch (e) {
-      console.error('Error fetching monthly closes:', e);
-      return [];
+      console.error('getMonthlyCierres:', e.message); return [];
     }
   },
 
-  // ── Competition History ──────────────────────────────────────────
-  // Saves a weekly snapshot of all competitors to competition_history table
-  // Each row: { fetched_date, type ('local'|'estado'), name, facebook, instagram, tiktok, twitter }
-  saveCompetitionSnapshot: async (rows) => {
+  // ── 6. TAREAS / TASKS (Dependencias) ──────────────────────────────────────
+  getTasks: async () => {
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/competition_history`, {
-        method: 'POST',
-        headers: { ...getHeaders(), 'Prefer': 'return=minimal' },
-        body: JSON.stringify(rows)
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return true;
+      return await get('tasks', 'order=created_at.desc');
     } catch (e) {
-      console.error('Error saving competition snapshot:', e);
-      return false;
+      console.error('getTasks:', e.message); return [];
     }
   },
 
-  getCompetitionHistory: async (type, name) => {
+  addTask: async (title) => {
     try {
-      let url = `${SUPABASE_URL}/rest/v1/competition_history?select=*&order=fetched_date.asc`;
-      if (type) url += `&type=eq.${type}`;
-      if (name) url += `&name=eq.${encodeURIComponent(name)}`;
-      const response = await fetch(url, { headers: getHeaders() });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return await response.json();
+      const data = await post('tasks', { title, status: 'pending' }, 'return=representation');
+      return data[0] || null;
     } catch (e) {
-      console.error('Error fetching competition history:', e);
-      return [];
+      console.error('addTask:', e.message); return null;
+    }
+  },
+
+  completeTask: async (id) => {
+    try {
+      const data = await patch('tasks', `id=eq.${id}`,
+        { status: 'completed', completed_at: new Date().toISOString() });
+      return data[0] || null;
+    } catch (e) {
+      console.error('completeTask:', e.message); return null;
     }
   },
 
   deleteTask: async (id) => {
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return true;
+      return await del('tasks', `id=eq.${id}`);
     } catch (e) {
-      console.error("Error deleting task in Supabase:", e);
-      return false;
+      console.error('deleteTask:', e.message); return false;
     }
-  }
+  },
+
+  // ── LEGACY: competition_history (proyecto anterior) ────────────────────────
+  // Mantenido por compatibilidad — el nuevo flujo usa competition_local/estados
+  saveCompetitionSnapshot: async (rows) => {
+    try {
+      return await post('competition_history', rows);
+    } catch (e) {
+      console.error('saveCompetitionSnapshot:', e.message); return false;
+    }
+  },
 };
