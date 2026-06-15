@@ -264,12 +264,6 @@ function App() {
             Redes Sociales
           </button>
           <button
-            className={`header-nav-tab ${activeReportTab === 'radar' ? 'active' : ''}`}
-            onClick={() => setActiveReportTab('radar')}
-          >
-            Dependencias
-          </button>
-          <button
             className={`header-nav-tab ${activeReportTab === 'competencia' ? 'active' : ''}`}
             onClick={() => setActiveReportTab('competencia')}
           >
@@ -727,9 +721,7 @@ function App() {
           />
         ) : activeReportTab === 'analisis' ? (
           <AnalisisSection formatNumber={formatNumber} />
-        ) : (
-          <DependenciasDashboard />
-        )}
+        ) : null}
 
         {/* Footer */}
         <footer className="mt-16 border-t border-slate-200 pt-8 text-center text-slate-400 text-xs">
