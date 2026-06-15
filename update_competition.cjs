@@ -48,35 +48,35 @@ async function getTW(user) {
 }
 
 const localMediaDefs = [
-  { name: 'Quadratín Morelos', isUs: true,  fb: 'QuadratinMorelos',       ig: 'quadratin.morelos',       tt: 'quadratinmorelos',      tw: 'Quadratin_Mor' },
-  { name: 'Diario de Morelos',              fb: 'DiariodeMorelosOficial', ig: 'diariodemorelosoficial',  tt: 'diariodemorelos',       tw: 'diariodemorelos' },
-  { name: 'La Unión de Morelos',            fb: 'uniondemorelos',          ig: 'uniondemorelos',          tt: 'launiondemorelos',      tw: 'uniondemorelos' },
-  { name: 'El Sol de Cuernavaca',           fb: 'ElSoldeCuernavaca',       ig: null,                      tt: null,                    tw: 'soldecuernavaca' },
-  { name: 'La Jornada Morelos',             fb: 'lajornada.morelos',       ig: 'jornadamorelos',          tt: 'lajornadamorelos',      tw: 'MorelosJornada' },
-  { name: '24 Morelos',                     fb: '24morelos',               ig: '24_morelos',              tt: '24mexico',              tw: '24_morelos' },
+  { name: 'Quadratín Morelos', isUs: true,  logo: 'https://morelos.quadratin.com.mx/favicon.ico',      fb: 'QuadratinMorelos',       ig: 'quadratin.morelos',       tt: 'quadratinmorelos',      tw: 'Quadratin_Mor' },
+  { name: 'Diario de Morelos',              logo: 'https://www.diariodemorelos.com/favicon.ico',        fb: 'DiariodeMorelosOficial', ig: 'diariodemorelosoficial',  tt: 'diariodemorelos',       tw: 'diariodemorelos' },
+  { name: 'La Unión de Morelos',            logo: 'https://www.launion.com.mx/favicon.ico',             fb: 'uniondemorelos',          ig: 'uniondemorelos',          tt: 'launiondemorelos',      tw: 'uniondemorelos' },
+  { name: 'El Sol de Cuernavaca',           logo: 'https://oem.com.mx/elsoldecuernavaca/favicon.ico',   fb: 'ElSoldeCuernavaca',       ig: null,                      tt: null,                    tw: 'soldecuernavaca' },
+  { name: 'La Jornada Morelos',             logo: 'https://www.lajornadamorelos.mx/favicon.ico',        fb: 'lajornada.morelos',       ig: 'jornadamorelos',          tt: 'lajornadamorelos',      tw: 'MorelosJornada' },
+  { name: '24 Morelos',                     logo: 'https://www.24morelos.com/favicon.ico',              fb: '24morelos',               ig: '24_morelos',              tt: '24mexico',              tw: '24_morelos' },
 ];
 
 const estadosDefs = [
-  { estado: 'Morelos',          isUs: true, fb: 'QuadratinMorelos',       ig: 'quadratin.morelos',          tt: 'quadratinmorelos',       tw: 'Quadratin_Mor' },
-  { estado: 'Michoacán',                    fb: 'agenciaquadratin',        ig: 'quadratin_',                 tt: 'quadratin_',             tw: 'Quadratin_' },
-  { estado: 'CDMX',                         fb: 'QuadratinMexico',         ig: 'quadratincdmx',              tt: 'quadratin_mexico',       tw: 'QuadratinMexico' },
-  { estado: 'Edomex',                       fb: 'edomexquadratin',         ig: 'quadratinedomex',            tt: 'quadratin_edomex',       tw: 'QuadratinEdomex' },
-  { estado: 'Jalisco',                      fb: 'quadratinjalisco',        ig: 'quadratin_jalisco',          tt: 'quadratin_jalisco',      tw: null },
-  { estado: 'Querétaro',                    fb: 'queretaroquadratin',      ig: 'quadratinqueretaro',         tt: 'quadratin_qro',          tw: 'quadratin_q' },
-  { estado: 'Hidalgo',                      fb: 'quadratinhidalgo',        ig: 'quadratin_hidalgo',          tt: 'quadratin_hidalgo',      tw: 'Quadratin_Hgo' },
-  { estado: 'Veracruz',                     fb: 'QuadratinVeracruz',       ig: 'quadratin_ver',              tt: 'quadratinveracruz',      tw: 'quadratin_ver' },
-  { estado: 'SLP',                          fb: 'quadratin.slp',           ig: 'noticiasquadratin_slp',      tt: 'noticiasquadratin_slp',  tw: 'Quadratin_SLP' },
-  { estado: 'Oaxaca',                       fb: 'quadratinoaxaca',         ig: 'quadratinoaxaca',            tt: 'quadratin.oaxaca',       tw: 'Quadratinoaxaca' },
-  { estado: 'Chiapas',                      fb: '61569144014499',          ig: 'quadratin_chiapas',          tt: 'quadratinchiapas',       tw: 'quadratin_chis' },
-  { estado: 'Yucatán',                      fb: 'QuadratinYucatan',        ig: 'quadratinyucatan',           tt: 'quadratinyucatan',       tw: 'QuadratinY' },
-  { estado: 'Guerrero',                     fb: 'guerreroquadratin',       ig: 'quadratin_guerrero',         tt: 'quadratinguerrero',      tw: 'Quadratin_Gro' },
-  { estado: 'Tlaxcala',                     fb: 'QuadratinTlax',           ig: 'quadratintlax',              tt: 'quadratintlaxcala',      tw: 'quadratin_tlax' },
-  { estado: 'Bajío',                        fb: 'quadratinbajio',          ig: 'quadratinbajio',             tt: 'quadratinbajio',         tw: 'quadratinbajio' },
-  { estado: 'Puebla',                       fb: 'QuadratinPuebla',         ig: 'quadratinpuebla',            tt: 'quadratin.puebla',       tw: 'QuadratinPuebla' },
-  { estado: 'Quintana Roo',                 fb: 'quadratin.quintanaroo',   ig: 'quadratin.quintana.roo',     tt: 'quadratinquintanarroo',  tw: 'Q_QRoo' },
-  { estado: 'Sinaloa',                      fb: 'sinaloaquadratin',        ig: null,                         tt: null,                     tw: 'QuadratinSin' },
-  { estado: 'Nuevo León',                   fb: 'quadratinnuevoleon',      ig: 'quadratinnl',                tt: 'quadratinnl',            tw: 'quadratinnl' },
-  { estado: 'Hispano (EE.UU.)',             fb: 'HispanoQ',                ig: 'hispanoq',                   tt: 'hispanoq',               tw: 'HispanoQ' },
+  { estado: 'Morelos',          isUs: true, logo: 'https://morelos.quadratin.com.mx/favicon.ico', fb: 'QuadratinMorelos',       ig: 'quadratin.morelos',          tt: 'quadratinmorelos',       tw: 'Quadratin_Mor' },
+  { estado: 'Michoacán',                    logo: 'https://quadratin.com.mx/favicon.ico',               fb: 'agenciaquadratin',        ig: 'quadratin_',                 tt: 'quadratin_',             tw: 'Quadratin_' },
+  { estado: 'CDMX',                         logo: 'https://mexico.quadratin.com.mx/favicon.ico',        fb: 'QuadratinMexico',         ig: 'quadratincdmx',              tt: 'quadratin_mexico',       tw: 'QuadratinMexico' },
+  { estado: 'Edomex',                       logo: 'https://edomex.quadratin.com.mx/favicon.ico',        fb: 'edomexquadratin',         ig: 'quadratinedomex',            tt: 'quadratin_edomex',       tw: 'QuadratinEdomex' },
+  { estado: 'Jalisco',                      logo: 'https://jalisco.quadratin.com.mx/favicon.ico',       fb: 'quadratinjalisco',        ig: 'quadratin_jalisco',          tt: 'quadratin_jalisco',      tw: null },
+  { estado: 'Querétaro',                    logo: 'https://queretaro.quadratin.com.mx/favicon.ico',     fb: 'queretaroquadratin',      ig: 'quadratinqueretaro',         tt: 'quadratin_qro',          tw: 'quadratin_q' },
+  { estado: 'Hidalgo',                      logo: 'https://hidalgo.quadratin.com.mx/favicon.ico',       fb: 'quadratinhidalgo',        ig: 'quadratin_hidalgo',          tt: 'quadratin_hidalgo',      tw: 'Quadratin_Hgo' },
+  { estado: 'Veracruz',                     logo: 'https://veracruz.quadratin.com.mx/favicon.ico',      fb: 'QuadratinVeracruz',       ig: 'quadratin_ver',              tt: 'quadratinveracruz',      tw: 'quadratin_ver' },
+  { estado: 'SLP',                          logo: 'https://sanluispotosi.quadratin.com.mx/favicon.ico', fb: 'quadratin.slp',           ig: 'noticiasquadratin_slp',      tt: 'noticiasquadratin_slp',  tw: 'Quadratin_SLP' },
+  { estado: 'Oaxaca',                       logo: 'https://oaxaca.quadratin.com.mx/favicon.ico',        fb: 'quadratinoaxaca',         ig: 'quadratinoaxaca',            tt: 'quadratin.oaxaca',       tw: 'Quadratinoaxaca' },
+  { estado: 'Chiapas',                      logo: 'https://chiapas.quadratin.com.mx/favicon.ico',       fb: '61569144014499',          ig: 'quadratin_chiapas',          tt: 'quadratinchiapas',       tw: 'quadratin_chis' },
+  { estado: 'Yucatán',                      logo: 'https://yucatan.quadratin.com.mx/favicon.ico',       fb: 'QuadratinYucatan',        ig: 'quadratinyucatan',           tt: 'quadratinyucatan',       tw: 'QuadratinY' },
+  { estado: 'Guerrero',                     logo: 'https://guerrero.quadratin.com.mx/favicon.ico',      fb: 'guerreroquadratin',       ig: 'quadratin_guerrero',         tt: 'quadratinguerrero',      tw: 'Quadratin_Gro' },
+  { estado: 'Tlaxcala',                     logo: 'https://tlaxcala.quadratin.com.mx/favicon.ico',      fb: 'QuadratinTlax',           ig: 'quadratintlax',              tt: 'quadratintlaxcala',      tw: 'quadratin_tlax' },
+  { estado: 'Bajío',                        logo: 'https://bajio.quadratin.com.mx/favicon.ico',         fb: 'quadratinbajio',          ig: 'quadratinbajio',             tt: 'quadratinbajio',         tw: 'quadratinbajio' },
+  { estado: 'Puebla',                       logo: 'https://puebla.quadratin.com.mx/favicon.ico',        fb: 'QuadratinPuebla',         ig: 'quadratinpuebla',            tt: 'quadratin.puebla',       tw: 'QuadratinPuebla' },
+  { estado: 'Quintana Roo',                 logo: 'https://quintanaroo.quadratin.com.mx/favicon.ico',   fb: 'quadratin.quintanaroo',   ig: 'quadratin.quintana.roo',     tt: 'quadratinquintanarroo',  tw: 'Q_QRoo' },
+  { estado: 'Sinaloa',                      logo: 'https://sinaloa.quadratin.com.mx/favicon.ico',       fb: 'sinaloaquadratin',        ig: null,                         tt: null,                     tw: 'QuadratinSin' },
+  { estado: 'Nuevo León',                   logo: 'https://nuevoleon.quadratin.com.mx/favicon.ico',     fb: 'quadratinnuevoleon',      ig: 'quadratinnl',                tt: 'quadratinnl',            tw: 'quadratinnl' },
+  { estado: 'Hispano (EE.UU.)',             logo: 'https://quadratin.com/favicon.ico',                  fb: 'HispanoQ',                ig: 'hispanoq',                   tt: 'hispanoq',               tw: 'HispanoQ' },
 ];
 
 async function fetchItem(def, nameKey) {
@@ -87,7 +87,18 @@ async function fetchItem(def, nameKey) {
     getIG(def.ig), getTT(def.tt), getTW(def.tw)
   ]);
   await new Promise(r => setTimeout(r, 600));
-  const result = { [nameKey]: def[nameKey], facebook: fb, instagram: ig, tiktok: tt, twitter: tw };
+  const result = {
+    [nameKey]: def[nameKey],
+    facebook: fb,
+    instagram: ig,
+    tiktok: tt,
+    twitter: tw,
+    logo: def.logo || null,
+    fb: def.fb || null,
+    ig: def.ig || null,
+    tt: def.tt || null,
+    tw: def.tw || null
+  };
   if (def.isUs) result.isUs = true;
   return result;
 }

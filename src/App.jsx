@@ -811,6 +811,16 @@ function Avatar({ name, isUs, logo, size = 44 }) {
 
 const COMP_COLORS = ['#06b6d4','#f59e0b','#ec4899','#8b5cf6','#10b981','#ef4444','#3b82f6','#14b8a6','#a855f7','#f97316'];
 
+const getSocialLink = (item, network) => {
+  const username = item[network === 'facebook' ? 'fb' : network === 'instagram' ? 'ig' : network === 'tiktok' ? 'tt' : 'tw'];
+  if (!username) return null;
+  if (network === 'facebook') return `https://www.facebook.com/${username}`;
+  if (network === 'instagram') return `https://www.instagram.com/${username}`;
+  if (network === 'tiktok') return `https://www.tiktok.com/@${username}`;
+  if (network === 'twitter') return `https://x.com/${username}`;
+  return null;
+};
+
 function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
   const networks   = ['facebook','instagram','tiktok','twitter'];
   const netLabels  = ['Facebook','Instagram','TikTok','Twitter'];
@@ -955,8 +965,18 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                 const grad  = isUs ? US_GRADIENT : RACE_GRADIENTS[idx % RACE_GRADIENTS.length];
                 const host  = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
                 const fav   = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+                const link  = getSocialLink(item, compNetwork);
+                const RowTag = link ? 'a' : 'div';
+                const rowProps = link ? {
+                  href: link,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  className: "flex items-center gap-3 group hover:bg-slate-50/80 transition-colors cursor-pointer"
+                } : {
+                  className: "flex items-center gap-3 group"
+                };
                 return (
-                  <div key={idx} className="flex items-center gap-3 group"
+                  <RowTag key={idx} {...rowProps}
                     style={isUs ? { background:'#fff7ed', borderRadius: 12, padding:'6px 8px', border:'1.5px solid #ff660040' } : { padding:'4px 8px' }}>
                     {/* Rank */}
                     <span className="text-[10px] font-extrabold w-6 text-center flex-shrink-0"
@@ -984,7 +1004,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                     </div>
                     {/* NOSOTROS badge */}
                     {isUs && <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0" style={{ background: US_GRADIENT }}>NOSOTROS</span>}
-                  </div>
+                  </RowTag>
                 );
               })}
             </div>
@@ -1021,8 +1041,18 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                 const grad = isUs ? US_GRADIENT : RACE_GRADIENTS[idx % RACE_GRADIENTS.length];
                 const host = item.logo ? (() => { try { return new URL(item.logo).hostname; } catch(e) { return ''; } })() : '';
                 const fav  = host ? `https://www.google.com/s2/favicons?domain=${host}&sz=64` : null;
+                const link = getSocialLink(item, compNetwork);
+                const RowTag = link ? 'a' : 'div';
+                const rowProps = link ? {
+                  href: link,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  className: "flex items-center gap-3 hover:bg-slate-50/80 transition-colors cursor-pointer"
+                } : {
+                  className: "flex items-center gap-3"
+                };
                 return (
-                  <div key={idx} className="flex items-center gap-3"
+                  <RowTag key={idx} {...rowProps}
                     style={isUs ? { background:'#fff7ed', borderRadius:12, padding:'6px 8px', border:'1.5px solid #ff660040' } : { padding:'4px 8px' }}>
                     <span className="text-[10px] font-extrabold w-6 text-center flex-shrink-0"
                       style={{ color: idx===0?'#f59e0b':idx===1?'#94a3b8':idx===2?'#cd7c2f':'#cbd5e1' }}>
@@ -1044,7 +1074,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
                       </div>
                     </div>
                     {isUs && <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full text-white flex-shrink-0" style={{ background:US_GRADIENT }}>NOSOTROS</span>}
-                  </div>
+                  </RowTag>
                 );
               })}
             </div>
