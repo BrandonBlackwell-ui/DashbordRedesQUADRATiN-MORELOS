@@ -30,6 +30,7 @@ DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "dat
 
 # RapidAPI Key: reads from env variable RAPIDAPI_KEY, fallback to user's current key
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988")
+APIFY_KEY = os.environ.get("APIFY_KEY")
 
 def find_count_recursive(data, target_keys):
     """Recursively search for a count value matching target keys in nested data structures."""
@@ -127,46 +128,39 @@ def get_tiktok_followers():
     return None
 
 def get_facebook_followers():
-    # Facebook has a limit of 25/month. Skip on weekends.
-    is_weekend = datetime.datetime.today().weekday() in (5, 6)
-    if is_weekend:
-        print("Facebook API call skipped (weekend limit preservation)")
-        return None
-
-    print("Fetching Facebook followers via RapidAPI...")
-    url = "https://facebook-pages-scraper2.p.rapidapi.com/get_facebook_pages_details"
-    headers = {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "facebook-pages-scraper2.p.rapidapi.com"
-    }
-    params = {
-        "link": "https://www.facebook.com/QuadratinMorelos",
-        "show_verified_badge": "false",
-        "proxy_country": "us"
+    print("Fetching Facebook followers via Apify...")
+    url = f"https://api.apify.com/v2/acts/apify~facebook-pages-scraper/run-sync-get-dataset-items?token={APIFY_KEY}"
+    payload = {
+        "startUrls": [
+            {"url": "https://www.facebook.com/QuadratinMorelos/?locale=es_LA"}
+        ]
     }
     try:
-        r = requests.get(url, headers=headers, params=params, timeout=15)
+        r = requests.post(url, json=payload, timeout=300)
         if r.status_code == 200:
             data = r.json()
+            item = data[0] if isinstance(data, list) and data else data
             count = None
-            if isinstance(data, list) and len(data) > 0:
-                data = data[0]
-            if isinstance(data, dict):
-                d = data.get("data", {}) if "data" in data else data
-                if isinstance(d, dict):
-                    count = d.get("followers") or d.get("followers_count") or d.get("likes") or d.get("likes_count")
+            if isinstance(item, dict):
+                count = (item.get("followers") or item.get("followersCount") or
+                         item.get("followers_count") or item.get("numberOfFollowers") or
+                         item.get("likes") or item.get("likesCount") or item.get("likes_count"))
             if count is None:
-                count = find_count_recursive(data, ["followers", "followers_count", "likes", "likes_count"])
+                count = find_count_recursive(data, [
+                    "followers", "followersCount", "followers_count",
+                    "numberOfFollowers", "pageFollowers", "fanCount",
+                    "likes", "likesCount", "likes_count"
+                ])
             
             if count is not None:
                 print(f"Facebook followers: {count}")
-                return count
+                return int(count)
             else:
-                print(f"Facebook: Could not find follower/like count in JSON: {str(data)[:300]}")
+                print(f"Facebook: Could not find follower count in Apify JSON: {str(data)[:300]}")
         else:
-            print(f"Facebook API Error {r.status_code}: {r.text}")
+            print(f"Facebook Apify Error {r.status_code}: {r.text[:500]}")
     except Exception as e:
-        print(f"Facebook API Exception: {e}")
+        print(f"Facebook Apify Exception: {e}")
     return None
 
 def get_twitter_followers():
@@ -303,9 +297,7 @@ def main():
     failed_platforms = []
     if instagram is None: failed_platforms.append("instagram")
     if tiktok is None: failed_platforms.append("tiktok")
-    # Facebook is only "failed" if it's not a weekend and returned None
-    is_weekend = datetime.datetime.today().weekday() in (5, 6)
-    if facebook is None and not is_weekend: failed_platforms.append("facebook")
+    if facebook is None: failed_platforms.append("facebook")
     if twitter is None: failed_platforms.append("twitter")
     
     if failed_platforms:

@@ -1,12 +1,12 @@
 // Weekly competition data updater — runs every Monday via GitHub Actions
-// Facebook: facebook-scraper3 API (100 calls/month)
+// Facebook: Apify actor apify/facebook-pages-scraper (single run with all pages)
 // Instagram/TikTok/Twitter: existing RapidAPI key
 
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const FB_KEY       = process.env.FB_KEY       || '4ba69eaa2amsh85583d0034b25cep1ebe37jsn4c3ca683070c';
+const APIFY_KEY    = process.env.APIFY_KEY   ;
 const RAP_KEY      = process.env.RAP_KEY      || 'ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uwcazgeemwspebmhntcm.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3Y2F6Z2VlbXdzcGVibWhudGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MjI1NzIsImV4cCI6MjA5NjQ5ODU3Mn0.f7HmfTR6l9exA1DGbM03n-sUAGOmNMRbLw9g3pGbhtY';
@@ -23,10 +23,129 @@ function get(url, headers) {
   });
 }
 
-async function getFB(url) {
-  const r = await get('https://facebook-scraper3.p.rapidapi.com/page/details?url=' + encodeURIComponent(url),
-    { 'x-rapidapi-key': FB_KEY, 'x-rapidapi-host': 'facebook-scraper3.p.rapidapi.com' });
-  return r?.results?.followers || null;
+function postJson(url, payload, headers = {}, timeoutMs = 300000) {
+  return new Promise((resolve) => {
+    const body = JSON.stringify(payload);
+    const u = new URL(url);
+    const req = https.request({
+      hostname: u.hostname,
+      path: u.pathname + u.search,
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      }
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve(null); });
+    req.write(body);
+    req.end();
+  });
+}
+
+function normalizeFacebookUrl(url) {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^m\./, '').replace(/^www\./, '').toLowerCase();
+    const path = u.pathname.replace(/\/+$/, '').toLowerCase();
+    return `${host}${path}`;
+  } catch(e) {
+    return String(url).split('?')[0].replace(/\/+$/, '').toLowerCase();
+  }
+}
+
+function parseCount(value) {
+  if (typeof value === 'number') return Math.floor(value);
+  if (typeof value !== 'string') return null;
+  const clean = value.trim().toLowerCase().replace(/,/g, '').replace(/\s+/g, '');
+  const match = clean.match(/(\d+(?:\.\d+)?)([kmb])?/);
+  if (!match) return null;
+  const multipliers = { k: 1e3, m: 1e6, b: 1e9 };
+  return Math.floor(Number(match[1]) * (multipliers[match[2]] || 1));
+}
+
+function findCountRecursive(data, targetKeys) {
+  if (!data || typeof data !== 'object') return null;
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const found = findCountRecursive(item, targetKeys);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+  for (const key of targetKeys) {
+    if (key in data) {
+      const parsed = parseCount(data[key]);
+      if (parsed !== null) return parsed;
+      if (data[key] && typeof data[key] === 'object' && 'count' in data[key]) {
+        const count = parseCount(data[key].count);
+        if (count !== null) return count;
+      }
+    }
+  }
+  for (const value of Object.values(data)) {
+    const found = findCountRecursive(value, targetKeys);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+function getItemUrls(item) {
+  return [
+    item?.facebookUrl,
+    item?.pageUrl,
+    item?.url,
+    item?.inputUrl,
+    item?.startUrl,
+    item?.startUrl?.url,
+    item?.input?.url,
+    item?.pageName ? `https://www.facebook.com/${item.pageName}` : null,
+  ].filter(Boolean);
+}
+
+async function getFacebookFollowersBatch(urls) {
+  const uniqueUrls = [...new Set(urls.filter(Boolean))];
+  if (uniqueUrls.length === 0) return new Map();
+
+  console.log(`Fetching Facebook followers via Apify (${uniqueUrls.length} pages in one run)...`);
+  const input = { startUrls: uniqueUrls.map(url => ({ url })) };
+  const endpoint = `https://api.apify.com/v2/acts/apify~facebook-pages-scraper/run-sync-get-dataset-items?token=${encodeURIComponent(APIFY_KEY)}`;
+  const items = await postJson(endpoint, input, {}, 300000);
+  const results = new Map();
+
+  if (!Array.isArray(items)) {
+    console.log('Facebook Apify: actor did not return a dataset array.');
+    return results;
+  }
+
+  const followerKeys = [
+    'followers',
+    'followersCount',
+    'followers_count',
+    'numberOfFollowers',
+    'pageFollowers',
+    'fanCount',
+    'likes',
+    'likesCount',
+    'likes_count',
+  ];
+
+  for (const item of items) {
+    const count = findCountRecursive(item, followerKeys);
+    if (count === null) continue;
+    for (const itemUrl of getItemUrls(item)) {
+      results.set(normalizeFacebookUrl(itemUrl), count);
+    }
+  }
+
+  console.log(`Facebook Apify: matched ${results.size} URL keys from ${items.length} result items.`);
+  return results;
 }
 async function getIG(user) {
   if (!user) return null;
@@ -79,13 +198,11 @@ const estadosDefs = [
   { estado: 'Hispano (EE.UU.)',             logo: 'https://quadratin.com/favicon.ico',                  fb: 'HispanoQ',                ig: 'hispanoq',                   tt: 'hispanoq',               tw: 'HispanoQ' },
 ];
 
-async function fetchItem(def, nameKey) {
+async function fetchItem(def, nameKey, facebookFollowersByUrl) {
   const fbUrl = def.fb ? ('https://www.facebook.com/' + def.fb) : null;
   console.log('Fetching', def[nameKey], '...');
-  const [fb, ig, tt, tw] = await Promise.all([
-    fbUrl ? getFB(fbUrl) : Promise.resolve(null),
-    getIG(def.ig), getTT(def.tt), getTW(def.tw)
-  ]);
+  const fb = fbUrl ? (facebookFollowersByUrl.get(normalizeFacebookUrl(fbUrl)) || null) : null;
+  const [ig, tt, tw] = await Promise.all([getIG(def.ig), getTT(def.tt), getTW(def.tw)]);
   await new Promise(r => setTimeout(r, 600));
   const result = {
     [nameKey]: def[nameKey],
@@ -155,13 +272,18 @@ async function saveToSupabase(today, localMedia, estados) {
 }
 
 async function main() {
+  const facebookUrls = [...localMediaDefs, ...estadosDefs]
+    .filter(d => d.fb)
+    .map(d => 'https://www.facebook.com/' + d.fb);
+  const facebookFollowersByUrl = await getFacebookFollowersBatch(facebookUrls);
+
   console.log('=== Fetching local media ===');
   const localMedia = [];
-  for (const d of localMediaDefs) localMedia.push(await fetchItem(d, 'name'));
+  for (const d of localMediaDefs) localMedia.push(await fetchItem(d, 'name', facebookFollowersByUrl));
 
   console.log('\n=== Fetching Quadratin estados ===');
   const estados = [];
-  for (const d of estadosDefs) estados.push(await fetchItem(d, 'estado'));
+  for (const d of estadosDefs) estados.push(await fetchItem(d, 'estado', facebookFollowersByUrl));
 
   const today = new Date().toISOString().split('T')[0];
 

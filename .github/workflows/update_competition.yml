@@ -23,9 +23,9 @@ jobs:
 
       - name: Fetch competition data
         env:
-          FB_KEY: ${{ secrets.FB_SCRAPER_KEY }}
+          APIFY_KEY: ${{ secrets.APIFY_KEY }}
           RAP_KEY: ${{ secrets.RAPIDAPI_KEY }}
-        run: node update_competition.js
+        run: node update_competition.cjs
 
       - name: Commit and push
         run: |

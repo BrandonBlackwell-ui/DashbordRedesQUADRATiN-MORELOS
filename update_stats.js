@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename);
 
 const DATA_FILE = path.join(__dirname, 'src', 'data.js');
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988";
+const APIFY_KEY = process.env.APIFY_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://uwcazgeemwspebmhntcm.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3Y2F6Z2VlbXdzcGVibWhudGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MjI1NzIsImV4cCI6MjA5NjQ5ODU3Mn0.f7HmfTR6l9exA1DGbM03n-sUAGOmNMRbLw9g3pGbhtY";
 
@@ -105,35 +106,39 @@ async function getTikTokFollowers() {
 }
 
 async function getFacebookFollowers() {
-  console.log("Fetching Facebook followers via RapidAPI...");
-  const url = "https://facebook-pages-scraper2.p.rapidapi.com/get_facebook_pages_details?link=https://www.facebook.com/QuadratinMorelos&show_verified_badge=false&proxy_country=us";
+  console.log("Fetching Facebook followers via Apify...");
+  const url = `https://api.apify.com/v2/acts/apify~facebook-pages-scraper/run-sync-get-dataset-items?token=${encodeURIComponent(APIFY_KEY)}`;
+  const payload = {
+    startUrls: [{ url: "https://www.facebook.com/QuadratinMorelos/?locale=es_LA" }]
+  };
   try {
     const res = await fetch(url, {
-      headers: {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "facebook-pages-scraper2.p.rapidapi.com"
-      }
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
     if (res.status === 200) {
-      let data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        data = data[0];
-      }
-      let d = data?.data || data;
-      let count = d?.followers || d?.followers_count || d?.likes || d?.likes_count;
+      const data = await res.json();
+      const item = Array.isArray(data) && data.length > 0 ? data[0] : data;
+      let count = item?.followers || item?.followersCount || item?.followers_count ||
+                  item?.numberOfFollowers || item?.likes || item?.likesCount || item?.likes_count;
       if (count == null) {
-        count = findCountRecursive(data, ["followers", "followers_count", "likes", "likes_count"]);
+        count = findCountRecursive(data, [
+          "followers", "followersCount", "followers_count",
+          "numberOfFollowers", "pageFollowers", "fanCount",
+          "likes", "likesCount", "likes_count"
+        ]);
       }
       if (count != null) {
         console.log(`Facebook followers: ${count}`);
-        return count;
+        return Math.floor(Number(count));
       }
-      console.log(`Facebook: Could not find follower count in JSON:`, JSON.stringify(data).substring(0, 300));
+      console.log(`Facebook: Could not find follower count in Apify JSON:`, JSON.stringify(data).substring(0, 300));
     } else {
-      console.log(`Facebook API Error ${res.status}: ${await res.text()}`);
+      console.log(`Facebook Apify Error ${res.status}: ${await res.text()}`);
     }
   } catch (e) {
-    console.log(`Facebook API Exception: ${e.message}`);
+    console.log(`Facebook Apify Exception: ${e.message}`);
   }
   return null;
 }

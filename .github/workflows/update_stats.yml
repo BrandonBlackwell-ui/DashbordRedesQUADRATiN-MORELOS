@@ -32,6 +32,8 @@ jobs:
           chrome-version: stable
 
       - name: Run scraper
+        env:
+          APIFY_KEY: ${{ secrets.APIFY_KEY }}
         run: python update_stats.py
 
       - name: Commit and push changes
