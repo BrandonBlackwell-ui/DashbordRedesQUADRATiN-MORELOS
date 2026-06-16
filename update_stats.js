@@ -61,33 +61,34 @@ function findCountRecursive(data, targetKeys) {
 }
 
 async function getInstagramFollowers() {
-  console.log("Fetching Instagram followers via RapidAPI...");
-  const url = "https://instagram-looter2.p.rapidapi.com/profile?username=quadratin.morelos";
+  console.log("Fetching Instagram followers via Apify...");
+  const url = `https://api.apify.com/v2/acts/coderx~instagram-profile-scraper-bio-posts/run-sync-get-dataset-items?token=${encodeURIComponent(APIFY_KEY)}`;
+  const payload = {
+    usernames: ["quadratin.morelos"]
+  };
   try {
     const res = await fetch(url, {
-      headers: {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"
-      }
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
-    if (res.status === 200) {
+    if (res.status === 200 || res.status === 201) {
       const data = await res.json();
-      let count = data?.edge_followed_by?.count ||
-                  data?.user?.edge_followed_by?.count ||
-                  data?.graphql?.user?.edge_followed_by?.count;
+      const item = Array.isArray(data) && data.length > 0 ? data[0] : data;
+      let count = item?.followersCount;
       if (count == null) {
-        count = findCountRecursive(data, ["edge_followed_by", "follower_count", "followers"]);
+        count = findCountRecursive(data, ["followersCount", "follower_count", "followers"]);
       }
       if (count != null) {
         console.log(`Instagram followers: ${count}`);
-        return count;
+        return Math.floor(Number(count));
       }
-      console.log(`Instagram: Could not find follower count in JSON:`, JSON.stringify(data).substring(0, 300));
+      console.log(`Instagram: Could not find follower count in Apify JSON:`, JSON.stringify(data).substring(0, 300));
     } else {
-      console.log(`Instagram API Error ${res.status}: ${await res.text()}`);
+      console.log(`Instagram Apify Error ${res.status}: ${await res.text()}`);
     }
   } catch (e) {
-    console.log(`Instagram API Exception: ${e.message}`);
+    console.log(`Instagram Apify Exception: ${e.message}`);
   }
   return null;
 }

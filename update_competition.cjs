@@ -164,11 +164,31 @@ async function getFacebookFollowersBatch(urls) {
   console.log(`Facebook Apify: matched ${results.size} URL keys from ${items.length} result items.`);
   return results;
 }
-async function getIG(user) {
-  if (!user) return null;
-  const r = await get('https://instagram-looter2.p.rapidapi.com/profile?username=' + user,
-    { 'x-rapidapi-key': RAP_KEY, 'x-rapidapi-host': 'instagram-looter2.p.rapidapi.com' });
-  return r?.edge_followed_by?.count || r?.follower_count || null;
+async function getInstagramFollowersBatch(usernames) {
+  const uniqueUsernames = [...new Set(usernames.filter(Boolean))];
+  if (uniqueUsernames.length === 0) return new Map();
+
+  console.log(`Fetching Instagram followers via Apify (${uniqueUsernames.length} profiles in one run)...`);
+  const input = { usernames: uniqueUsernames };
+  const endpoint = `https://api.apify.com/v2/acts/coderx~instagram-profile-scraper-bio-posts/run-sync-get-dataset-items?token=${encodeURIComponent(APIFY_KEY)}`;
+  const items = await postJson(endpoint, input, {}, 300000);
+  const results = new Map();
+
+  if (!Array.isArray(items)) {
+    console.log('Instagram Apify: actor did not return a dataset array.');
+    return results;
+  }
+
+  for (const item of items) {
+    if (!item || !item.username) continue;
+    const count = item.followersCount || findCountRecursive(item, ['followersCount', 'followers', 'follower_count']);
+    if (count !== null) {
+      results.set(item.username.toLowerCase(), count);
+    }
+  }
+
+  console.log(`Instagram Apify: matched ${results.size} usernames from ${items.length} result items.`);
+  return results;
 }
 async function getTT(user) {
   if (!user) return null;
@@ -215,7 +235,7 @@ const estadosDefs = [
   { estado: 'Hispano (EE.UU.)',             logo: 'https://quadratin.com/favicon.ico',                  fb: 'HispanoQ',                ig: 'hispanoq',                   tt: 'hispanoq',               tw: 'HispanoQ' },
 ];
 
-async function fetchItem(def, nameKey, facebookFollowersByUrl, existingData) {
+async function fetchItem(def, nameKey, facebookFollowersByUrl, instagramFollowersByUsername, existingData) {
   const fbUrl = def.fb ? ('https://www.facebook.com/' + def.fb) : null;
   console.log('Fetching', def[nameKey], '...');
   
@@ -228,13 +248,18 @@ async function fetchItem(def, nameKey, facebookFollowersByUrl, existingData) {
     fb = existingItem.facebook;
   }
 
-  const [ig, tt, tw] = await Promise.all([getIG(def.ig), getTT(def.tt), getTW(def.tw)]);
+  let ig = def.ig ? (instagramFollowersByUsername.get(def.ig.toLowerCase()) || null) : null;
+  if (ig === null && existingItem) {
+    ig = existingItem.instagram;
+  }
+
+  const [tt, tw] = await Promise.all([getTT(def.tt), getTW(def.tw)]);
   await new Promise(r => setTimeout(r, 600));
 
   const result = {
     [nameKey]: def[nameKey],
     facebook: fb,
-    instagram: ig !== null ? ig : (existingItem ? existingItem.instagram : null),
+    instagram: ig,
     tiktok: tt !== null ? tt : (existingItem ? existingItem.tiktok : null),
     twitter: tw !== null ? tw : (existingItem ? existingItem.twitter : null),
     logo: def.logo || null,
@@ -318,18 +343,30 @@ function loadExistingCompetitionData() {
 
 async function main() {
   const existingData = loadExistingCompetitionData();
+  
+  // Facebook batch fetch via Apify
   const facebookUrls = [...localMediaDefs, ...estadosDefs]
     .filter(d => d.fb)
     .map(d => 'https://www.facebook.com/' + d.fb);
   const facebookFollowersByUrl = await getFacebookFollowersBatch(facebookUrls);
 
+  // Instagram batch fetch via Apify
+  const instagramUsernames = [...localMediaDefs, ...estadosDefs]
+    .filter(d => d.ig)
+    .map(d => d.ig);
+  const instagramFollowersByUsername = await getInstagramFollowersBatch(instagramUsernames);
+
   console.log('=== Fetching local media ===');
   const localMedia = [];
-  for (const d of localMediaDefs) localMedia.push(await fetchItem(d, 'name', facebookFollowersByUrl, existingData));
+  for (const d of localMediaDefs) {
+    localMedia.push(await fetchItem(d, 'name', facebookFollowersByUrl, instagramFollowersByUsername, existingData));
+  }
 
   console.log('\n=== Fetching Quadratin estados ===');
   const estados = [];
-  for (const d of estadosDefs) estados.push(await fetchItem(d, 'estado', facebookFollowersByUrl, existingData));
+  for (const d of estadosDefs) {
+    estados.push(await fetchItem(d, 'estado', facebookFollowersByUrl, instagramFollowersByUsername, existingData));
+  }
 
   const today = new Date().toISOString().split('T')[0];
 

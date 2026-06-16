@@ -63,36 +63,31 @@ def find_count_recursive(data, target_keys):
     return None
 
 def get_instagram_followers():
-    print("Fetching Instagram followers via RapidAPI...")
-    url = "https://instagram-looter2.p.rapidapi.com/profile"
-    headers = {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"
+    print("Fetching Instagram followers via Apify...")
+    url = f"https://api.apify.com/v2/acts/coderx~instagram-profile-scraper-bio-posts/run-sync-get-dataset-items?token={APIFY_KEY}"
+    payload = {
+        "usernames": ["quadratin.morelos"]
     }
-    params = {"username": "quadratin.morelos"}
     try:
-        r = requests.get(url, headers=headers, params=params, timeout=15)
-        if r.status_code == 200:
+        r = requests.post(url, json=payload, timeout=300)
+        if r.status_code in (200, 201):
             data = r.json()
+            item = data[0] if isinstance(data, list) and data else data
             count = None
-            if isinstance(data, dict):
-                # Try standard graphql paths
-                count = (data.get("edge_followed_by", {}).get("count") or
-                         data.get("user", {}).get("edge_followed_by", {}).get("count") or
-                         data.get("graphql", {}).get("user", {}).get("edge_followed_by", {}).get("count"))
+            if isinstance(item, dict):
+                count = item.get("followersCount")
             if count is None:
-                # Recursive fallback
-                count = find_count_recursive(data, ["edge_followed_by", "follower_count", "followers"])
+                count = find_count_recursive(data, ["followersCount", "follower_count", "followers"])
             
             if count is not None:
                 print(f"Instagram followers: {count}")
-                return count
+                return int(count)
             else:
-                print(f"Instagram: Could not find follower count in JSON: {str(data)[:300]}")
+                print(f"Instagram: Could not find follower count in Apify JSON: {str(data)[:300]}")
         else:
-            print(f"Instagram API Error {r.status_code}: {r.text}")
+            print(f"Instagram Apify Error {r.status_code}: {r.text[:500]}")
     except Exception as e:
-        print(f"Instagram API Exception: {e}")
+        print(f"Instagram Apify Exception: {e}")
     return None
 
 def get_tiktok_followers():
