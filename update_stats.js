@@ -5,6 +5,23 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load environment variables from .env file
+function loadEnv() {
+  const envPath = path.join(__dirname || process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...valParts] = trimmed.split('=');
+        const val = valParts.join('=').trim().replace(/^['"]|['"]$/g, '');
+        process.env[key.trim()] = val;
+      }
+    });
+  }
+}
+loadEnv();
+
 const DATA_FILE = path.join(__dirname, 'src', 'data.js');
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988";
 const APIFY_KEY = process.env.APIFY_KEY;
@@ -117,7 +134,7 @@ async function getFacebookFollowers() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (res.status === 200) {
+    if (res.status === 200 || res.status === 201) {
       const data = await res.json();
       const item = Array.isArray(data) && data.length > 0 ? data[0] : data;
       let count = item?.followers || item?.followersCount || item?.followers_count ||
@@ -242,7 +259,7 @@ async function main() {
     process.exit(1);
   }
 
-  const todayStr = "2026-06-15";
+  const todayStr = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const lastEntry = data.history[data.history.length - 1] || {};
 
   const newEntry = {

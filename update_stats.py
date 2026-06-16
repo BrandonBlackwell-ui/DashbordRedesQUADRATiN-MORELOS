@@ -137,7 +137,7 @@ def get_facebook_followers():
     }
     try:
         r = requests.post(url, json=payload, timeout=300)
-        if r.status_code == 200:
+        if r.status_code in (200, 201):
             data = r.json()
             item = data[0] if isinstance(data, list) and data else data
             count = None

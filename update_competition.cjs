@@ -6,6 +6,23 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
+// Load environment variables from .env file
+function loadEnv() {
+  const envPath = path.join(__dirname || process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...valParts] = trimmed.split('=');
+        const val = valParts.join('=').trim().replace(/^['"]|['"]$/g, '');
+        process.env[key.trim()] = val;
+      }
+    });
+  }
+}
+loadEnv();
+
 const APIFY_KEY    = process.env.APIFY_KEY   ;
 const RAP_KEY      = process.env.RAP_KEY      || 'ca3f32f8d2msh2837e1e472c671ap19ab72jsnc2437284c988';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uwcazgeemwspebmhntcm.supabase.co';
@@ -198,18 +215,28 @@ const estadosDefs = [
   { estado: 'Hispano (EE.UU.)',             logo: 'https://quadratin.com/favicon.ico',                  fb: 'HispanoQ',                ig: 'hispanoq',                   tt: 'hispanoq',               tw: 'HispanoQ' },
 ];
 
-async function fetchItem(def, nameKey, facebookFollowersByUrl) {
+async function fetchItem(def, nameKey, facebookFollowersByUrl, existingData) {
   const fbUrl = def.fb ? ('https://www.facebook.com/' + def.fb) : null;
   console.log('Fetching', def[nameKey], '...');
-  const fb = fbUrl ? (facebookFollowersByUrl.get(normalizeFacebookUrl(fbUrl)) || null) : null;
+  
+  // Find existing item for fallback
+  const existingList = existingData ? (nameKey === 'name' ? existingData.localMedia : existingData.estados) : [];
+  const existingItem = existingList.find(item => item[nameKey] === def[nameKey]);
+
+  let fb = fbUrl ? (facebookFollowersByUrl.get(normalizeFacebookUrl(fbUrl)) || null) : null;
+  if (fb === null && existingItem) {
+    fb = existingItem.facebook;
+  }
+
   const [ig, tt, tw] = await Promise.all([getIG(def.ig), getTT(def.tt), getTW(def.tw)]);
   await new Promise(r => setTimeout(r, 600));
+
   const result = {
     [nameKey]: def[nameKey],
     facebook: fb,
-    instagram: ig,
-    tiktok: tt,
-    twitter: tw,
+    instagram: ig !== null ? ig : (existingItem ? existingItem.instagram : null),
+    tiktok: tt !== null ? tt : (existingItem ? existingItem.tiktok : null),
+    twitter: tw !== null ? tw : (existingItem ? existingItem.twitter : null),
     logo: def.logo || null,
     fb: def.fb || null,
     ig: def.ig || null,
@@ -271,7 +298,26 @@ async function saveToSupabase(today, localMedia, estados) {
   await supabasePost('competition_estados', estadosRows);
 }
 
+function loadExistingCompetitionData() {
+  const compPath = path.join(__dirname, 'src', 'competition.js');
+  if (fs.existsSync(compPath)) {
+    try {
+      const content = fs.readFileSync(compPath, 'utf8');
+      const jsonStr = content
+        .replace(/(?<!https?:)\/\/.*$/gm, '') // Remove single-line comments safely
+        .replace(/export\s+const\s+competition_data\s*=\s*/, '')
+        .replace(/;\s*$/, '')
+        .trim();
+      return Function('return (' + jsonStr + ')')();
+    } catch (e) {
+      console.error('Failed to parse existing competition.js:', e.message);
+    }
+  }
+  return null;
+}
+
 async function main() {
+  const existingData = loadExistingCompetitionData();
   const facebookUrls = [...localMediaDefs, ...estadosDefs]
     .filter(d => d.fb)
     .map(d => 'https://www.facebook.com/' + d.fb);
@@ -279,11 +325,11 @@ async function main() {
 
   console.log('=== Fetching local media ===');
   const localMedia = [];
-  for (const d of localMediaDefs) localMedia.push(await fetchItem(d, 'name', facebookFollowersByUrl));
+  for (const d of localMediaDefs) localMedia.push(await fetchItem(d, 'name', facebookFollowersByUrl, existingData));
 
   console.log('\n=== Fetching Quadratin estados ===');
   const estados = [];
-  for (const d of estadosDefs) estados.push(await fetchItem(d, 'estado', facebookFollowersByUrl));
+  for (const d of estadosDefs) estados.push(await fetchItem(d, 'estado', facebookFollowersByUrl, existingData));
 
   const today = new Date().toISOString().split('T')[0];
 
