@@ -2,8 +2,8 @@ name: Weekly Competition Update
 
 on:
   schedule:
-    # Every Monday at 8:00 AM Central Time (UTC-6) -> 14:00 UTC
-    - cron: '0 14 * * 1'
+    # Every Monday at 6:00 AM Central Time (UTC-6) -> 12:00 UTC
+    - cron: '0 12 * * 1'
   workflow_dispatch: # Manual trigger from GitHub UI
 
 jobs:

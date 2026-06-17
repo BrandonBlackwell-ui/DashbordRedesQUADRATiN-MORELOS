@@ -2,8 +2,8 @@ name: Auto-Scrape Social Stats
 
 on:
   schedule:
-    # 7:00 AM Central Time (UTC-6) -> 13:00 UTC
-    - cron: '0 13 * * *'
+    # 6:00 AM Central Time (UTC-6) -> 12:00 UTC
+    - cron: '0 12 * * *'
   workflow_dispatch: # Allows manual run from GitHub UI
 
 jobs:
