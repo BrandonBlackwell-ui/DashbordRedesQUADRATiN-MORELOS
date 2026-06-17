@@ -22,4 +22,4 @@ jobs:
           RAP_KEY:      ${{ secrets.RAP_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: node update_content.js
+        run: node update_content.cjs
