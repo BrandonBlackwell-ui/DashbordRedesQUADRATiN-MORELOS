@@ -2,8 +2,8 @@ name: Auto-Scrape Social Stats
 
 on:
   schedule:
-    # 6:00 AM Central Time (UTC-6) -> 12:00 UTC
-    - cron: '0 12 * * *'
+    # 5:00 AM Central Time (UTC-6) -> 11:00 UTC
+    - cron: '0 11 * * *'
   workflow_dispatch: # Allows manual run from GitHub UI
 
 jobs:
@@ -34,6 +34,8 @@ jobs:
       - name: Run scraper
         env:
           APIFY_KEY: ${{ secrets.APIFY_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python update_stats.py
 
       - name: Commit and push changes

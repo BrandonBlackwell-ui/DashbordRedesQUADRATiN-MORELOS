@@ -105,7 +105,7 @@ Sé directo, práctico y específico. Usa datos del análisis. Formato limpio co
         'content-type':      'application/json',
       },
       body: JSON.stringify({
-        model:      'claude-opus-4-5',
+        model:      'claude-3-5-sonnet-latest',
         max_tokens: 1500,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -119,7 +119,7 @@ Sé directo, práctico y específico. Usa datos del análisis. Formato limpio co
 
     const data  = await response.json();
     const text  = data?.content?.[0]?.text || '';
-    const model = data?.model || 'claude-opus-4-5';
+    const model = data?.model || 'claude-3-5-sonnet-latest';
 
     return res.status(200).json({
       analysis: text,
