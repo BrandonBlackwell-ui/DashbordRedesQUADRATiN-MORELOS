@@ -824,7 +824,29 @@ const getSocialLink = (item, network) => {
 function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
   const networks   = ['facebook','instagram','tiktok','twitter'];
   const netLabels  = ['Facebook','Instagram','TikTok','Twitter'];
-  const sourceData = compTab === 'local' ? competition_data.localMedia : competition_data.estados;
+  
+  // Sincronizar dinámicamente los datos de "NOSOTROS" (Quadratín Morelos) con los datos diarios (qm_data)
+  const latestQM = qm_data.history && qm_data.history.length > 0 
+    ? qm_data.history[qm_data.history.length - 1] 
+    : null;
+
+  const overrideItem = (item) => {
+    if (item.isUs && latestQM) {
+      return {
+        ...item,
+        facebook: latestQM.facebook ?? item.facebook,
+        instagram: latestQM.instagram ?? item.instagram,
+        tiktok: latestQM.tiktok ?? item.tiktok,
+        twitter: latestQM.twitter ?? item.twitter,
+      };
+    }
+    return item;
+  };
+
+  const localMedia = competition_data.localMedia.map(overrideItem);
+  const estados = competition_data.estados.map(overrideItem);
+
+  const sourceData = compTab === 'local' ? localMedia : estados;
   const nameKey    = compTab === 'local' ? 'name' : 'estado';
   const net        = NET_CONFIG[compNetwork];
 
@@ -937,7 +959,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
 
       {/* ── Quadratín Nacional: horizontal bar chart ── */}
       {compTab === 'estados' && (() => {
-        const barData = [...competition_data.estados]
+        const barData = [...estados]
           .filter(e => e[compNetwork] != null)
           .sort((a, b) => (b[compNetwork]||0) - (a[compNetwork]||0));
         const maxBar = barData[0]?.[compNetwork] || 1;
@@ -1014,7 +1036,7 @@ function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, 
 
       {/* ── Medios Locales: barras horizontales ── */}
       {compTab === 'local' && (() => {
-        const barData = [...competition_data.localMedia]
+        const barData = [...localMedia]
           .filter(m => m[compNetwork] != null)
           .sort((a, b) => (b[compNetwork]||0) - (a[compNetwork]||0));
         const maxBar = barData[0]?.[compNetwork] || 1;
