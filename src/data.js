@@ -167,9 +167,9 @@ export const qm_data = {
     },
     {
       "date": "2026-06-23",
-      "instagram": 25678,
+      "instagram": 25736,
       "tiktok": 6636,
-      "facebook": 81011,
+      "facebook": 81014,
       "twitter": 10641,
       "youtube": null
     }

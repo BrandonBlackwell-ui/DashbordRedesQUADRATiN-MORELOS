@@ -193,13 +193,21 @@ async function getTwitterFollowers() {
 
 async function supabasePost(table, payload) {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    const isDaily = table === 'daily_followers';
+    const url = isDaily 
+      ? `${SUPABASE_URL}/rest/v1/${table}?on_conflict=date`
+      : `${SUPABASE_URL}/rest/v1/${table}`;
+    const preferHeader = isDaily 
+      ? "resolution=merge-duplicates,return=minimal" 
+      : "return=minimal";
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         "apikey": SUPABASE_KEY,
         "Authorization": `Bearer ${SUPABASE_KEY}`,
         "Content-Type": "application/json",
-        "Prefer": "return=minimal"
+        "Prefer": preferHeader
       },
       body: JSON.stringify(payload)
     });

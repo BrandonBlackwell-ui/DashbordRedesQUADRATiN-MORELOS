@@ -1,5 +1,5 @@
 // Competition data — auto-fetched weekly (Mondays) via GitHub Actions
-// Last updated: 2026-06-22
+// Last updated: 2026-06-23
 
 export const competition_data = {
 
@@ -7,8 +7,8 @@ export const competition_data = {
   localMedia: [
     {
         "name": "Quadratín Morelos",
-        "facebook": 81028,
-        "instagram": 25461,
+        "facebook": 81014,
+        "instagram": 25737,
         "tiktok": 6628,
         "twitter": 10641,
         "logo": "https://morelos.quadratin.com.mx/favicon.ico",
@@ -21,9 +21,9 @@ export const competition_data = {
     {
         "name": "Diario de Morelos",
         "facebook": 1400000,
-        "instagram": 115822,
+        "instagram": 115997,
         "tiktok": null,
-        "twitter": 307457,
+        "twitter": 307470,
         "logo": "https://www.diariodemorelos.com/favicon.ico",
         "fb": "DiariodeMorelosOficial",
         "ig": "diariodemorelosoficial",
@@ -33,9 +33,9 @@ export const competition_data = {
     {
         "name": "La Unión de Morelos",
         "facebook": 488000,
-        "instagram": 17021,
+        "instagram": 17015,
         "tiktok": 4075,
-        "twitter": 116337,
+        "twitter": 116338,
         "logo": "https://www.launion.com.mx/favicon.ico",
         "fb": "uniondemorelos",
         "ig": "uniondemorelos",
@@ -44,10 +44,10 @@ export const competition_data = {
     },
     {
         "name": "El Sol de Cuernavaca",
-        "facebook": 255394,
+        "facebook": 255891,
         "instagram": null,
         "tiktok": null,
-        "twitter": 31670,
+        "twitter": 31678,
         "logo": "https://oem.com.mx/elsoldecuernavaca/favicon.ico",
         "fb": "ElSoldeCuernavaca",
         "ig": null,
@@ -57,9 +57,9 @@ export const competition_data = {
     {
         "name": "La Jornada Morelos",
         "facebook": null,
-        "instagram": 495,
+        "instagram": 494,
         "tiktok": 653,
-        "twitter": 1863,
+        "twitter": 1864,
         "logo": "https://www.lajornadamorelos.mx/favicon.ico",
         "fb": "lajornada.morelos",
         "ig": "jornadamorelos",
@@ -69,9 +69,9 @@ export const competition_data = {
     {
         "name": "24 Morelos",
         "facebook": 1200000,
-        "instagram": 96798,
+        "instagram": 96821,
         "tiktok": 129499,
-        "twitter": 116216,
+        "twitter": 116244,
         "logo": "https://www.24morelos.com/favicon.ico",
         "fb": "24morelos",
         "ig": "24_morelos",
@@ -84,8 +84,8 @@ export const competition_data = {
   estados: [
     {
         "estado": "Morelos",
-        "facebook": 81028,
-        "instagram": 25461,
+        "facebook": 81014,
+        "instagram": 25737,
         "tiktok": 6628,
         "twitter": 10641,
         "logo": "https://morelos.quadratin.com.mx/favicon.ico",
@@ -97,10 +97,10 @@ export const competition_data = {
     },
     {
         "estado": "Michoacán",
-        "facebook": 1315511,
-        "instagram": 33934,
+        "facebook": 1315526,
+        "instagram": 33943,
         "tiktok": 30064,
-        "twitter": 239753,
+        "twitter": 239739,
         "logo": "https://quadratin.com.mx/favicon.ico",
         "fb": "agenciaquadratin",
         "ig": "quadratin_",
@@ -109,8 +109,8 @@ export const competition_data = {
     },
     {
         "estado": "CDMX",
-        "facebook": 41812,
-        "instagram": 2556,
+        "facebook": 41851,
+        "instagram": 2563,
         "tiktok": 16035,
         "twitter": 28309,
         "logo": "https://mexico.quadratin.com.mx/favicon.ico",
@@ -122,9 +122,9 @@ export const competition_data = {
     {
         "estado": "Edomex",
         "facebook": 105000,
-        "instagram": 11770,
+        "instagram": 11774,
         "tiktok": 5945,
-        "twitter": 19710,
+        "twitter": 19712,
         "logo": "https://edomex.quadratin.com.mx/favicon.ico",
         "fb": "edomexquadratin",
         "ig": "quadratinedomex",
@@ -133,8 +133,8 @@ export const competition_data = {
     },
     {
         "estado": "Jalisco",
-        "facebook": 62905,
-        "instagram": 9707,
+        "facebook": 63019,
+        "instagram": 9710,
         "tiktok": 35895,
         "twitter": null,
         "logo": "https://jalisco.quadratin.com.mx/favicon.ico",
@@ -145,10 +145,10 @@ export const competition_data = {
     },
     {
         "estado": "Querétaro",
-        "facebook": 101110,
-        "instagram": 72230,
+        "facebook": 101290,
+        "instagram": 72249,
         "tiktok": 13148,
-        "twitter": 30293,
+        "twitter": 30295,
         "logo": "https://queretaro.quadratin.com.mx/favicon.ico",
         "fb": "queretaroquadratin",
         "ig": "quadratinqueretaro",
@@ -157,8 +157,8 @@ export const competition_data = {
     },
     {
         "estado": "Hidalgo",
-        "facebook": 293936,
-        "instagram": 15188,
+        "facebook": 294457,
+        "instagram": 15261,
         "tiktok": null,
         "twitter": 22340,
         "logo": "https://hidalgo.quadratin.com.mx/favicon.ico",
@@ -169,10 +169,10 @@ export const competition_data = {
     },
     {
         "estado": "Veracruz",
-        "facebook": 22243,
+        "facebook": 22245,
         "instagram": 573,
         "tiktok": 1242,
-        "twitter": 10455,
+        "twitter": 10456,
         "logo": "https://veracruz.quadratin.com.mx/favicon.ico",
         "fb": "QuadratinVeracruz",
         "ig": "quadratin_ver",
@@ -193,10 +193,10 @@ export const competition_data = {
     },
     {
         "estado": "Oaxaca",
-        "facebook": 152009,
-        "instagram": 2388,
+        "facebook": 152017,
+        "instagram": 2387,
         "tiktok": 677,
-        "twitter": 155938,
+        "twitter": 155941,
         "logo": "https://oaxaca.quadratin.com.mx/favicon.ico",
         "fb": "quadratinoaxaca",
         "ig": "quadratinoaxaca",
@@ -217,8 +217,8 @@ export const competition_data = {
     },
     {
         "estado": "Yucatán",
-        "facebook": 563629,
-        "instagram": 2155,
+        "facebook": 563597,
+        "instagram": 2162,
         "tiktok": 3717,
         "twitter": 1612,
         "logo": "https://yucatan.quadratin.com.mx/favicon.ico",
@@ -229,10 +229,10 @@ export const competition_data = {
     },
     {
         "estado": "Guerrero",
-        "facebook": 393096,
+        "facebook": 393075,
         "instagram": 1337,
         "tiktok": 29772,
-        "twitter": 16246,
+        "twitter": 16248,
         "logo": "https://guerrero.quadratin.com.mx/favicon.ico",
         "fb": "guerreroquadratin",
         "ig": "quadratin_guerrero",
@@ -265,10 +265,10 @@ export const competition_data = {
     },
     {
         "estado": "Puebla",
-        "facebook": 25742,
-        "instagram": 9052,
+        "facebook": 25750,
+        "instagram": 9062,
         "tiktok": 6410,
-        "twitter": 510,
+        "twitter": 511,
         "logo": "https://puebla.quadratin.com.mx/favicon.ico",
         "fb": "QuadratinPuebla",
         "ig": "quadratinpuebla",
@@ -302,7 +302,7 @@ export const competition_data = {
     {
         "estado": "Nuevo León",
         "facebook": 15000,
-        "instagram": 982,
+        "instagram": 984,
         "tiktok": 4231,
         "twitter": 270,
         "logo": "https://nuevoleon.quadratin.com.mx/favicon.ico",
@@ -314,9 +314,9 @@ export const competition_data = {
     {
         "estado": "Hispano (EE.UU.)",
         "facebook": 6889,
-        "instagram": 3830,
+        "instagram": 3829,
         "tiktok": 5266,
-        "twitter": 224,
+        "twitter": 225,
         "logo": "https://quadratin.com/favicon.ico",
         "fb": "HispanoQ",
         "ig": "hispanoq",
@@ -325,5 +325,5 @@ export const competition_data = {
     }
 ],
 
-  lastUpdated: '2026-06-22',
+  lastUpdated: '2026-06-23',
 };
