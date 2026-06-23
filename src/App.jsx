@@ -195,17 +195,86 @@ function App() {
   const totalGrowthPercentage = (totalGrowth / initialTotal) * 100;
   const totalProgress = (currentTotal / totalGoal) * 100;
 
-  // Build chart data for the multi-line chart
-  // Each point = one month label, has real + goal values per platform
-  const chartMonths = [
-    { label: '1 Ene', real: { facebook: 78000, instagram: 1692, twitter: 10500, tiktok: 1893 }, goal: null },
-    { label: 'Cierre Ene', real: { facebook: 77890, instagram: null, twitter: null, tiktok: 1893 }, goal: null },
-    { label: 'Cierre Feb', real: { facebook: 78825, instagram: null, twitter: null, tiktok: 2010 }, goal: null },
-    { label: 'Marzo', real: { facebook: 80479, instagram: 3936, twitter: 10584, tiktok: 2116 }, goal: { facebook: 93500, instagram: 4500, twitter: 12933, tiktok: 2500 } },
-    { label: 'Abril', real: { facebook: 81025, instagram: 11904, twitter: 10603, tiktok: 5638 }, goal: { facebook: 109000, instagram: 9000, twitter: 15289, tiktok: 5000 } },
-    { label: 'Mayo', real: { facebook: 81024, instagram: 19917, twitter: 10628, tiktok: 5794 }, goal: { facebook: 84000, instagram: 13500, twitter: 15200, tiktok: 7500 } },
-    { label: 'Junio', real: { facebook: 81000, instagram: 21927, twitter: 10636, tiktok: 6060 }, goal: { facebook: 87000, instagram: 18000, twitter: 20000, tiktok: 10000 } },
+  const capitalizeFirstLetter = (string) => string ? string.charAt(0).toUpperCase() + string.slice(1) : '';
+  const firstMonthName = initialEntry ? new Date(initialEntry.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' }) : 'enero';
+  const lastMonthName = lastEntry ? new Date(lastEntry.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' }) : 'junio';
+  const firstMonthNameCap = capitalizeFirstLetter(firstMonthName);
+  const lastMonthNameCap = capitalizeFirstLetter(lastMonthName);
+
+  // Build chart data dynamically from history and monthly goals
+  const currentMonthNum = lastEntry ? parseInt(lastEntry.date.substring(5, 7), 10) : 6;
+  const currentYear = lastEntry ? lastEntry.date.substring(0, 4) : '2026';
+
+  const monthConfigs = [
+    { num: 1, label: 'Cierre Ene', goalKey: 'enero', standardLabel: 'Enero' },
+    { num: 2, label: 'Cierre Feb', goalKey: 'febrero', standardLabel: 'Febrero' },
+    { num: 3, label: 'Marzo', goalKey: 'marzo', standardLabel: 'Marzo' },
+    { num: 4, label: 'Abril', goalKey: 'abril', standardLabel: 'Abril' },
+    { num: 5, label: 'Mayo', goalKey: 'mayo', standardLabel: 'Mayo' },
+    { num: 6, label: 'Junio', goalKey: 'junio', standardLabel: 'Junio' },
+    { num: 7, label: 'Julio', goalKey: 'julio', standardLabel: 'Julio' },
+    { num: 8, label: 'Agosto', goalKey: 'agosto', standardLabel: 'Agosto' },
+    { num: 9, label: 'Septiembre', goalKey: 'septiembre', standardLabel: 'Septiembre' },
+    { num: 10, label: 'Octubre', goalKey: 'octubre', standardLabel: 'Octubre' },
+    { num: 11, label: 'Noviembre', goalKey: 'noviembre', standardLabel: 'Noviembre' },
+    { num: 12, label: 'Diciembre', goalKey: 'diciembre', standardLabel: 'Diciembre' },
   ];
+
+  const dynamicChartMonths = [];
+
+  // Special baseline: 1 Ene
+  if (history && history.length > 0) {
+    const first = history[0];
+    dynamicChartMonths.push({
+      label: '1 Ene',
+      real: {
+        facebook: first.facebook ?? null,
+        instagram: first.instagram ?? null,
+        twitter: first.twitter ?? null,
+        tiktok: first.tiktok ?? null,
+      },
+      goal: null
+    });
+  }
+
+  // Monthly closes and current month progress
+  monthConfigs.forEach(m => {
+    if (!history) return;
+    const prefix = `${currentYear}-${String(m.num).padStart(2, '0')}`;
+    const monthEntries = history.filter(h => h.date && h.date.startsWith(prefix));
+    
+    if (monthEntries.length === 0) return;
+
+    if (m.num === currentMonthNum) {
+      // Current month uses the absolute latest entry dynamically
+      const latest = lastEntry || monthEntries[monthEntries.length - 1];
+      dynamicChartMonths.push({
+        label: m.standardLabel,
+        real: {
+          facebook: latest.facebook ?? null,
+          instagram: latest.instagram ?? null,
+          twitter: latest.twitter ?? null,
+          tiktok: latest.tiktok ?? null,
+        },
+        goal: monthly_goals[m.goalKey] || null
+      });
+    } else if (m.num < currentMonthNum) {
+      // Past month uses its last entry as monthly closure
+      const lastOfMonth = monthEntries[monthEntries.length - 1];
+      dynamicChartMonths.push({
+        label: m.num <= 2 ? m.label : m.standardLabel,
+        real: {
+          facebook: lastOfMonth.facebook ?? null,
+          instagram: lastOfMonth.instagram ?? null,
+          twitter: lastOfMonth.twitter ?? null,
+          tiktok: lastOfMonth.tiktok ?? null,
+        },
+        goal: monthly_goals[m.goalKey] || null
+      });
+    }
+  });
+
+  const chartMonths = dynamicChartMonths;
 
   // Flatten chart data for recharts
   const buildChartData = (platform) =>
@@ -217,8 +286,8 @@ function App() {
 
   const consolidadoChartData = chartMonths.map(m => ({
     label: m.label,
-    real: m.real.facebook + (m.real.instagram ?? 0) + (m.real.twitter ?? 0) + (m.real.tiktok ?? 0),
-    meta: m.goal ? m.goal.facebook + m.goal.instagram + m.goal.twitter + m.goal.tiktok : null,
+    real: (m.real?.facebook ?? 0) + (m.real?.instagram ?? 0) + (m.real?.twitter ?? 0) + (m.real?.tiktok ?? 0),
+    meta: m.goal ? (m.goal.facebook ?? 0) + (m.goal.instagram ?? 0) + (m.goal.twitter ?? 0) + (m.goal.tiktok ?? 0) : null,
   }));
 
   const currentChartData = selectedChartTab === 'consolidado'
@@ -470,7 +539,8 @@ function App() {
                 <span className="w-1.5 h-6 bg-[#ff6600] rounded-full inline-block"></span>
                 Histórico de Crecimiento — Quadratín Morelos
               </h2>
-              <p className="text-slate-400 text-xs mt-0.5 ml-4">Enero – Mayo 2026 · ● Real · ■ Meta (marzo–mayo)
+              <p className="text-slate-400 text-xs mt-0.5 ml-4">
+                Enero – {lastMonthNameCap} {currentYear} · ● Real · ■ Meta (marzo–{lastMonthName})
               </p>
             </div>
 
@@ -506,7 +576,7 @@ function App() {
                     <span className="text-xl font-bold text-emerald-600">+{formatNumber(growth)} ({growthPct > 0 ? '+' : ''}{growthPct}%)</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Meta mayo ({formatNumber(p?.goal)})</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Meta {lastMonthName} ({formatNumber(p?.goal)})</span>
                     <span className={`text-xl font-bold ${isOver ? 'text-emerald-600' : 'text-[#003366]'}`}>
                       {goalPct}% {isOver ? '✓ Superada' : ''}
                     </span>
