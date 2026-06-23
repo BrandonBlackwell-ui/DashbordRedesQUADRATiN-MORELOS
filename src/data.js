@@ -159,7 +159,7 @@ export const qm_data = {
       "instagram": 25445,
       "tiktok": 6636,
       "facebook": 81025,
-      "twitter": 10641,
+      "twitter": 10642,
       "youtube": null,
       "failed_scrapes": [
         "tiktok"
