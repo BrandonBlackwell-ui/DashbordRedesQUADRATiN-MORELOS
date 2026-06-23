@@ -82,19 +82,42 @@ function App() {
   const [metasSaved, setMetasSaved] = useState(false);
   const METAS_PIN = 'QM2026';
 
-  // Extract history and configurations from data
-  const history = qm_data.history;
+  // State initialized with local history from data.js
+  const [history, setHistory] = useState(qm_data.history);
+
   const goals = qm_data.goals;
   const monthly_goals = qm_data.monthly_goals;
   const monthly_real = qm_data.monthly_real;
 
-  // Last entry with full data for totals (skip youtube-only gaps)
-  const lastEntry = history[history.length - 1];
-  const initialEntry = history[0]; // 1 Jan
+  // Fetch the latest history from Supabase on mount
+  useEffect(() => {
+    supabase.getDailyFollowers().then(dbHistory => {
+      if (dbHistory && dbHistory.length > 0) {
+        setHistory(dbHistory);
+      }
+    }).catch(err => {
+      console.error("Error fetching history from Supabase, falling back to local data:", err);
+    });
+  }, []);
 
-  // Last month-end close (entries labeled "Cierre ...")
-  const cierreEntries = history.filter(h => h.label && h.label.startsWith('Cierre'));
-  const lastMonthClose = cierreEntries[cierreEntries.length - 1] || initialEntry;
+  // Last entry with full data for totals (skip youtube-only gaps)
+  const lastEntry = history && history.length > 0 ? history[history.length - 1] : { facebook: 81000, instagram: 21927, twitter: 10636, tiktok: 6060, date: '2026-06-08' };
+  const initialEntry = history && history.length > 0 ? history[0] : { facebook: 78000, instagram: 1692, twitter: 10500, tiktok: 1893, date: '2026-01-01' };
+
+  // Last month-end close (entries from a month before lastEntry)
+  const lastMonthNum = lastEntry ? parseInt(lastEntry.date.substring(5, 7), 10) - 1 : 5;
+  const lastMonthYear = lastEntry ? lastEntry.date.substring(0, 4) : '2026';
+  const lastMonthPrefix = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}`;
+  const lastMonthEntries = history ? history.filter(h => h.date && h.date.startsWith(lastMonthPrefix)) : [];
+  const lastMonthClose = lastMonthEntries.length > 0 ? lastMonthEntries[lastMonthEntries.length - 1] : initialEntry;
+
+  const capitalizeFirstLetter = (string) => string ? string.charAt(0).toUpperCase() + string.slice(1) : '';
+
+  const lastMonthCloseLabel = lastMonthClose.label 
+    ? lastMonthClose.label.replace('Cierre ', '') 
+    : (lastMonthClose.date 
+        ? capitalizeFirstLetter(new Date(lastMonthClose.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'short' })).replace('.', '') 
+        : 'May');
 
   // Auto-save monthly close on last day of each month
   useEffect(() => {
@@ -195,7 +218,6 @@ function App() {
   const totalGrowthPercentage = (totalGrowth / initialTotal) * 100;
   const totalProgress = (currentTotal / totalGoal) * 100;
 
-  const capitalizeFirstLetter = (string) => string ? string.charAt(0).toUpperCase() + string.slice(1) : '';
   const firstMonthName = initialEntry ? new Date(initialEntry.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' }) : 'enero';
   const lastMonthName = lastEntry ? new Date(lastEntry.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' }) : 'junio';
   const firstMonthNameCap = capitalizeFirstLetter(firstMonthName);
@@ -515,7 +537,7 @@ function App() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">
-                          Cierre {lastMonthClose.label?.replace('Cierre ', '') || 'May'}:
+                          Cierre {lastMonthCloseLabel}:
                         </span>
                         <span className="font-bold" style={{ color: (lastMonthClose[key] ?? 0) >= item.initial ? 'var(--color-success)' : 'var(--color-danger)' }}>
                           {formatNumber(lastMonthClose[key] ?? item.initial)}
@@ -788,6 +810,7 @@ function App() {
             compTab={compTab} setCompTab={setCompTab}
             compNetwork={compNetwork} setCompNetwork={setCompNetwork}
             formatNumber={formatNumber}
+            latestQM={lastEntry}
           />
         ) : activeReportTab === 'analisis' ? (
           <AnalisisSection formatNumber={formatNumber} />
@@ -891,14 +914,9 @@ const getSocialLink = (item, network) => {
   return null;
 };
 
-function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber }) {
+function CompetenciaSection({ compTab, setCompTab, compNetwork, setCompNetwork, formatNumber, latestQM }) {
   const networks   = ['facebook','instagram','tiktok','twitter'];
   const netLabels  = ['Facebook','Instagram','TikTok','Twitter'];
-  
-  // Sincronizar dinámicamente los datos de "NOSOTROS" (Quadratín Morelos) con los datos diarios (qm_data)
-  const latestQM = qm_data.history && qm_data.history.length > 0 
-    ? qm_data.history[qm_data.history.length - 1] 
-    : null;
 
   const overrideItem = (item) => {
     if (item.isUs && latestQM) {
