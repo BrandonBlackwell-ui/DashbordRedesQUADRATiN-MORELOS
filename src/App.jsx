@@ -144,7 +144,30 @@ function App() {
     });
   }, []);
 
-  // Platform configuration objects
+  // Build chart and platform goals dynamically based on current date/month
+  const currentMonthNum = lastEntry ? parseInt(lastEntry.date.substring(5, 7), 10) : 6;
+  const currentYear = lastEntry ? lastEntry.date.substring(0, 4) : '2026';
+
+  const monthConfigs = [
+    { num: 1, label: 'Cierre Ene', goalKey: 'enero', standardLabel: 'Enero' },
+    { num: 2, label: 'Cierre Feb', goalKey: 'febrero', standardLabel: 'Febrero' },
+    { num: 3, label: 'Marzo', goalKey: 'marzo', standardLabel: 'Marzo' },
+    { num: 4, label: 'Abril', goalKey: 'abril', standardLabel: 'Abril' },
+    { num: 5, label: 'Mayo', goalKey: 'mayo', standardLabel: 'Mayo' },
+    { num: 6, label: 'Junio', goalKey: 'junio', standardLabel: 'Junio' },
+    { num: 7, label: 'Julio', goalKey: 'julio', standardLabel: 'Julio' },
+    { num: 8, label: 'Agosto', goalKey: 'agosto', standardLabel: 'Agosto' },
+    { num: 9, label: 'Septiembre', goalKey: 'septiembre', standardLabel: 'Septiembre' },
+    { num: 10, label: 'Octubre', goalKey: 'octubre', standardLabel: 'Octubre' },
+    { num: 11, label: 'Noviembre', goalKey: 'noviembre', standardLabel: 'Noviembre' },
+    { num: 12, label: 'Diciembre', goalKey: 'diciembre', standardLabel: 'Diciembre' },
+  ];
+
+  const currentMonthConfig = monthConfigs.find(m => m.num === currentMonthNum);
+  const currentMonthGoalKey = currentMonthConfig ? currentMonthConfig.goalKey : 'junio';
+  const currentMonthGoals = monthly_goals[currentMonthGoalKey] || {};
+
+  // Platform configuration objects (using current month's goal)
   const platforms = {
     instagram: {
       name: 'Instagram',
@@ -152,7 +175,7 @@ function App() {
       logo: InstagramLogo,
       initial: initialEntry.instagram,
       current: lastEntry.instagram,
-      goal: goals.instagram,
+      goal: currentMonthGoals.instagram ?? null,
       profileUrl: 'https://www.instagram.com/quadratin.morelos/'
     },
     tiktok: {
@@ -161,7 +184,7 @@ function App() {
       logo: TikTokLogo,
       initial: initialEntry.tiktok,
       current: lastEntry.tiktok,
-      goal: goals.tiktok,
+      goal: currentMonthGoals.tiktok ?? null,
       profileUrl: 'https://www.tiktok.com/@quadratinmorelos'
     },
     facebook: {
@@ -170,7 +193,7 @@ function App() {
       logo: FacebookLogo,
       initial: initialEntry.facebook,
       current: lastEntry.facebook,
-      goal: goals.facebook,
+      goal: currentMonthGoals.facebook ?? null,
       profileUrl: 'https://www.facebook.com/share/14iS411Pd47/?mibextid=wwXIfr'
     },
     twitter: {
@@ -179,7 +202,7 @@ function App() {
       logo: TwitterXLogo,
       initial: initialEntry.twitter,
       current: lastEntry.twitter,
-      goal: goals.twitter,
+      goal: null, // No goal established for Twitter/X as requested
       profileUrl: 'https://x.com/Quadratin_Mor'
     }
   };
@@ -224,25 +247,7 @@ function App() {
   const firstMonthNameCap = capitalizeFirstLetter(firstMonthName);
   const lastMonthNameCap = capitalizeFirstLetter(lastMonthName);
 
-  // Build chart data dynamically from history and monthly goals
-  const currentMonthNum = lastEntry ? parseInt(lastEntry.date.substring(5, 7), 10) : 6;
-  const currentYear = lastEntry ? lastEntry.date.substring(0, 4) : '2026';
-
-  const monthConfigs = [
-    { num: 1, label: 'Cierre Ene', goalKey: 'enero', standardLabel: 'Enero' },
-    { num: 2, label: 'Cierre Feb', goalKey: 'febrero', standardLabel: 'Febrero' },
-    { num: 3, label: 'Marzo', goalKey: 'marzo', standardLabel: 'Marzo' },
-    { num: 4, label: 'Abril', goalKey: 'abril', standardLabel: 'Abril' },
-    { num: 5, label: 'Mayo', goalKey: 'mayo', standardLabel: 'Mayo' },
-    { num: 6, label: 'Junio', goalKey: 'junio', standardLabel: 'Junio' },
-    { num: 7, label: 'Julio', goalKey: 'julio', standardLabel: 'Julio' },
-    { num: 8, label: 'Agosto', goalKey: 'agosto', standardLabel: 'Agosto' },
-    { num: 9, label: 'Septiembre', goalKey: 'septiembre', standardLabel: 'Septiembre' },
-    { num: 10, label: 'Octubre', goalKey: 'octubre', standardLabel: 'Octubre' },
-    { num: 11, label: 'Noviembre', goalKey: 'noviembre', standardLabel: 'Noviembre' },
-    { num: 12, label: 'Diciembre', goalKey: 'diciembre', standardLabel: 'Diciembre' },
-  ];
-
+  // Build chart data dynamically from history and monthly goals (extending to remaining months)
   const dynamicChartMonths = [];
 
   // Special baseline: 1 Ene
@@ -260,37 +265,54 @@ function App() {
     });
   }
 
-  // Monthly closes and current month progress
+  // Monthly closes, current month progress, and future month goals
   monthConfigs.forEach(m => {
     if (!history) return;
     const prefix = `${currentYear}-${String(m.num).padStart(2, '0')}`;
     const monthEntries = history.filter(h => h.date && h.date.startsWith(prefix));
-    
-    if (monthEntries.length === 0) return;
 
     if (m.num === currentMonthNum) {
       // Current month uses the absolute latest entry dynamically
-      const latest = lastEntry || monthEntries[monthEntries.length - 1];
+      const latest = lastEntry || (monthEntries.length > 0 ? monthEntries[monthEntries.length - 1] : null);
       dynamicChartMonths.push({
         label: m.standardLabel,
-        real: {
+        real: latest ? {
           facebook: latest.facebook ?? null,
           instagram: latest.instagram ?? null,
           twitter: latest.twitter ?? null,
           tiktok: latest.tiktok ?? null,
+        } : {
+          facebook: null,
+          instagram: null,
+          twitter: null,
+          tiktok: null,
         },
         goal: monthly_goals[m.goalKey] || null
       });
     } else if (m.num < currentMonthNum) {
       // Past month uses its last entry as monthly closure
-      const lastOfMonth = monthEntries[monthEntries.length - 1];
+      if (monthEntries.length > 0) {
+        const lastOfMonth = monthEntries[monthEntries.length - 1];
+        dynamicChartMonths.push({
+          label: m.num <= 2 ? m.label : m.standardLabel,
+          real: {
+            facebook: lastOfMonth.facebook ?? null,
+            instagram: lastOfMonth.instagram ?? null,
+            twitter: lastOfMonth.twitter ?? null,
+            tiktok: lastOfMonth.tiktok ?? null,
+          },
+          goal: monthly_goals[m.goalKey] || null
+        });
+      }
+    } else {
+      // Future months (m.num > currentMonthNum) show goals but no real data
       dynamicChartMonths.push({
-        label: m.num <= 2 ? m.label : m.standardLabel,
+        label: m.standardLabel,
         real: {
-          facebook: lastOfMonth.facebook ?? null,
-          instagram: lastOfMonth.instagram ?? null,
-          twitter: lastOfMonth.twitter ?? null,
-          tiktok: lastOfMonth.tiktok ?? null,
+          facebook: null,
+          instagram: null,
+          twitter: null,
+          tiktok: null,
         },
         goal: monthly_goals[m.goalKey] || null
       });
