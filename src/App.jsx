@@ -211,12 +211,13 @@ function App() {
   const formatPercentage = (val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
 
   // Totals using last entry
-  const initialTotal = initialEntry.instagram + initialEntry.tiktok + initialEntry.facebook + initialEntry.twitter;
-  const currentTotal = lastEntry.instagram + lastEntry.tiktok + lastEntry.facebook + lastEntry.twitter;
-  const totalGoal = goals.instagram + goals.tiktok + goals.facebook + goals.twitter;
+  // Totals using last entry safely (handling null goals or scraper errors)
+  const initialTotal = (initialEntry.instagram ?? 0) + (initialEntry.tiktok ?? 0) + (initialEntry.facebook ?? 0) + (initialEntry.twitter ?? 0);
+  const currentTotal = (lastEntry.instagram ?? 0) + (lastEntry.tiktok ?? 0) + (lastEntry.facebook ?? 0) + (lastEntry.twitter ?? 0);
+  const totalGoal = (goals.instagram ?? 0) + (goals.tiktok ?? 0) + (goals.facebook ?? 0) + (goals.twitter ?? 0);
   const totalGrowth = currentTotal - initialTotal;
-  const totalGrowthPercentage = (totalGrowth / initialTotal) * 100;
-  const totalProgress = (currentTotal / totalGoal) * 100;
+  const totalGrowthPercentage = initialTotal > 0 ? (totalGrowth / initialTotal) * 100 : 0;
+  const totalProgress = totalGoal > 0 ? (currentTotal / totalGoal) * 100 : 0;
 
   const firstMonthName = initialEntry ? new Date(initialEntry.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' }) : 'enero';
   const lastMonthName = lastEntry ? new Date(lastEntry.date + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' }) : 'junio';
@@ -451,10 +452,10 @@ function App() {
             {Object.entries(platforms).map(([key, item]) => {
               const Logo = item.logo;
               const netGrowth = item.current - item.initial;
-              const netGrowthPct = (netGrowth / item.initial) * 100;
-              const progressPct = (item.current / item.goal) * 100;
-              const remaining = item.goal - item.current;
-              const isGoalMet = item.current >= item.goal;
+              const netGrowthPct = item.initial > 0 ? (netGrowth / item.initial) * 100 : 0;
+              const progressPct = item.goal ? (item.current / item.goal) * 100 : 0;
+              const remaining = item.goal ? item.goal - item.current : 0;
+              const isGoalMet = item.goal ? item.current >= item.goal : false;
               const perfColor = progressPct >= 80 ? '#16a34a' : progressPct >= 50 ? '#f97316' : '#dc2626';
               const perfBg    = progressPct >= 80 ? '#f0fdf4' : progressPct >= 50 ? '#fff7ed' : '#fef2f2';
 
@@ -495,39 +496,46 @@ function App() {
                       </span>
                     </div>
 
-                    {/* Meta progress */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-slate-400 flex items-center gap-0.5"><Target size={11} /> Meta: {formatNumber(item.goal)}</span>
-                        <span className="font-bold text-sm px-1.5 py-0.5 rounded-md" style={{ color: perfColor, backgroundColor: perfBg }}>
-                          {progressPct.toFixed(1)}%
-                        </span>
-                      </div>
-
-                      {/* Bar */}
-                      <div className="progress-bar-container">
-                        <div
-                          className="h-full transition-all duration-1000"
-                          style={{
-                            width: `${Math.min(progressPct, 100)}%`,
-                            backgroundColor: perfColor
-                          }}
-                        />
-                      </div>
-
-                      {/* Remaining indicator */}
-                      <div className="text-right mt-1">
-                        {isGoalMet ? (
-                          <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-emerald-650 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-250">
-                            <Award size={9} /> Meta Superada
+                    {item.goal !== null ? (
+                      /* Meta progress */
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-slate-400 flex items-center gap-0.5"><Target size={11} /> Meta: {formatNumber(item.goal)}</span>
+                          <span className="font-bold text-sm px-1.5 py-0.5 rounded-md" style={{ color: perfColor, backgroundColor: perfBg }}>
+                            {progressPct.toFixed(1)}%
                           </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-400">
-                            Faltan <strong className="text-slate-600 font-semibold">{formatNumber(remaining)}</strong>
-                          </span>
-                        )}
+                        </div>
+
+                        {/* Bar */}
+                        <div className="progress-bar-container">
+                          <div
+                            className="h-full transition-all duration-1000"
+                            style={{
+                              width: `${Math.min(progressPct, 100)}%`,
+                              backgroundColor: perfColor
+                            }}
+                          />
+                        </div>
+
+                        {/* Remaining indicator */}
+                        <div className="text-right mt-1">
+                          {isGoalMet ? (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-emerald-650 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-250">
+                              <Award size={9} /> Meta Superada
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">
+                              Faltan <strong className="text-slate-600 font-semibold">{formatNumber(remaining)}</strong>
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Special Twitter/X Note */
+                      <div className="bg-[#eef6ff] border border-[#d2e4ff] rounded-lg p-2.5 text-[11px] text-[#003366] leading-relaxed">
+                        <strong>Nota:</strong> No estableceremos una meta para Twitter por el momento. Durante los próximos tres meses evaluaremos enfocar esfuerzos en esa red.
+                      </div>
+                    )}
 
                     {/* Historical Baseline comparisons */}
                     <div className="bg-[#f8f9fa] border border-[#e5e7eb] rounded-lg p-2 space-y-0.5 text-[10px]">
@@ -584,7 +592,7 @@ function App() {
               const growth = p ? p.current - p.initial : 0;
               const growthPct = p && p.initial > 0 ? ((growth / p.initial) * 100).toFixed(1) : '0';
               const goalPct   = p && p.goal  > 0 ? ((p.current / p.goal) * 100).toFixed(1) : '0';
-              const isOver    = p && p.current >= p.goal;
+              const isOver    = p && p.goal != null && p.current >= p.goal;
               return (
                 <div className="flex flex-wrap gap-4 mb-5 pb-4 border-b border-slate-100">
                   <div className="flex flex-col">
@@ -598,9 +606,11 @@ function App() {
                     <span className="text-xl font-bold text-emerald-600">+{formatNumber(growth)} ({growthPct > 0 ? '+' : ''}{growthPct}%)</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Meta {lastMonthName} ({formatNumber(p?.goal)})</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                      Meta {lastMonthName} {p?.goal != null ? `(${formatNumber(p.goal)})` : ''}
+                    </span>
                     <span className={`text-xl font-bold ${isOver ? 'text-emerald-600' : 'text-[#003366]'}`}>
-                      {goalPct}% {isOver ? '✓ Superada' : ''}
+                      {p?.goal != null ? `${goalPct}% ${isOver ? '✓ Superada' : ''}` : 'No establecida'}
                     </span>
                   </div>
                 </div>

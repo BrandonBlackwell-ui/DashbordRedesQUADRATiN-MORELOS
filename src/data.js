@@ -210,6 +210,48 @@ export const qm_data = {
       "twitter": 20000,
       "tiktok": 10000,
       "youtube": null
+    },
+    "julio": {
+      "facebook": 82000,
+      "instagram": 30000,
+      "twitter": null,
+      "tiktok": 7900,
+      "youtube": null
+    },
+    "agosto": {
+      "facebook": 83200,
+      "instagram": 34000,
+      "twitter": null,
+      "tiktok": 9300,
+      "youtube": null
+    },
+    "septiembre": {
+      "facebook": 84600,
+      "instagram": 38000,
+      "twitter": null,
+      "tiktok": 10800,
+      "youtube": null
+    },
+    "octubre": {
+      "facebook": 86200,
+      "instagram": 42000,
+      "twitter": null,
+      "tiktok": 12400,
+      "youtube": null
+    },
+    "noviembre": {
+      "facebook": 88000,
+      "instagram": 46000,
+      "twitter": null,
+      "tiktok": 14100,
+      "youtube": null
+    },
+    "diciembre": {
+      "facebook": 90000,
+      "instagram": 50000,
+      "twitter": null,
+      "tiktok": 16000,
+      "youtube": null
     }
   },
   "monthly_real": {
@@ -250,10 +292,10 @@ export const qm_data = {
     }
   },
   "goals": {
-    "instagram": 18000,
-    "tiktok": 10000,
-    "facebook": 87000,
-    "twitter": 20000,
+    "instagram": 50000,
+    "tiktok": 16000,
+    "facebook": 90000,
+    "twitter": null,
     "youtube": null
   }
 };
