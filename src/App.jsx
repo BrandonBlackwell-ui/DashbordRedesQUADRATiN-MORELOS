@@ -329,11 +329,16 @@ function App() {
       meta: m.goal ? m.goal[platform] : null,
     }));
 
-  const consolidadoChartData = chartMonths.map(m => ({
-    label: m.label,
-    real: (m.real?.facebook ?? 0) + (m.real?.instagram ?? 0) + (m.real?.twitter ?? 0) + (m.real?.tiktok ?? 0),
-    meta: m.goal ? (m.goal.facebook ?? 0) + (m.goal.instagram ?? 0) + (m.goal.twitter ?? 0) + (m.goal.tiktok ?? 0) : null,
-  }));
+  const consolidadoChartData = chartMonths.map(m => {
+    const hasRealData = m.real?.facebook !== null || m.real?.instagram !== null || m.real?.twitter !== null || m.real?.tiktok !== null;
+    return {
+      label: m.label,
+      real: hasRealData 
+        ? (m.real?.facebook ?? 0) + (m.real?.instagram ?? 0) + (m.real?.twitter ?? 0) + (m.real?.tiktok ?? 0)
+        : null,
+      meta: m.goal ? (m.goal.facebook ?? 0) + (m.goal.instagram ?? 0) + (m.goal.twitter ?? 0) + (m.goal.tiktok ?? 0) : null,
+    };
+  });
 
   const currentChartData = selectedChartTab === 'consolidado'
     ? consolidadoChartData
