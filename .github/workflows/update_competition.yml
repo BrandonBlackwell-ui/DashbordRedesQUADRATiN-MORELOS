@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Fetch own stats
+        env:
+          APIFY_KEY: ${{ secrets.APIFY_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: node update_stats.js
+
       - name: Fetch competition data
         env:
           APIFY_KEY: ${{ secrets.APIFY_KEY }}
@@ -31,10 +37,10 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/competition.js
+          git add src/competition.js src/data.js
           if git diff --staged --quiet; then
-            echo "No changes in competition data. Skipping commit."
+            echo "No changes in data. Skipping commit."
           else
-            git commit -m "chore: Auto-update competition data [skip ci]"
+            git commit -m "chore: Auto-update competition and social stats [skip ci]"
             git push origin main
           fi
