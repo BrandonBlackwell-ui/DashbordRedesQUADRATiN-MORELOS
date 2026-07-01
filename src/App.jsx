@@ -104,9 +104,21 @@ function App() {
   const lastEntry = history && history.length > 0 ? history[history.length - 1] : { facebook: 81000, instagram: 21927, twitter: 10636, tiktok: 6060, date: '2026-06-08' };
   const initialEntry = history && history.length > 0 ? history[0] : { facebook: 78000, instagram: 1692, twitter: 10500, tiktok: 1893, date: '2026-01-01' };
 
-  // Last month-end close (entries from a month before lastEntry)
-  const lastMonthNum = lastEntry ? parseInt(lastEntry.date.substring(5, 7), 10) - 1 : 5;
-  const lastMonthYear = lastEntry ? lastEntry.date.substring(0, 4) : '2026';
+  // Build chart and platform goals dynamically based on current date/month, favoring system clock if in 2026
+  const getDashboardDate = () => {
+    const today = new Date();
+    if (today.getFullYear() === 2026) {
+      return today.toISOString().split('T')[0];
+    }
+    return lastEntry ? lastEntry.date : '2026-06-30';
+  };
+  const dashboardDate = getDashboardDate();
+  const currentMonthNum = parseInt(dashboardDate.substring(5, 7), 10);
+  const currentYear = dashboardDate.substring(0, 4);
+
+  // Last month-end close (entries from a month before current month)
+  const lastMonthNum = currentMonthNum === 1 ? 12 : currentMonthNum - 1;
+  const lastMonthYear = currentMonthNum === 1 ? String(parseInt(currentYear, 10) - 1) : currentYear;
   const lastMonthPrefix = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}`;
   const lastMonthEntries = history ? history.filter(h => h.date && h.date.startsWith(lastMonthPrefix)) : [];
   const lastMonthClose = lastMonthEntries.length > 0 ? lastMonthEntries[lastMonthEntries.length - 1] : initialEntry;
@@ -144,9 +156,7 @@ function App() {
     });
   }, []);
 
-  // Build chart and platform goals dynamically based on current date/month
-  const currentMonthNum = lastEntry ? parseInt(lastEntry.date.substring(5, 7), 10) : 6;
-  const currentYear = lastEntry ? lastEntry.date.substring(0, 4) : '2026';
+  // (currentMonthNum and currentYear are calculated at the top dynamically based on system clock / history)
 
   const monthConfigs = [
     { num: 1, label: 'Cierre Ene', goalKey: 'enero', standardLabel: 'Enero' },
@@ -360,6 +370,7 @@ function App() {
     { key: 'marzo', label: 'Marzo', hasGoal: true },
     { key: 'abril', label: 'Abril', hasGoal: true },
     { key: 'mayo', label: 'Mayo', hasGoal: true },
+    { key: 'junio', label: 'Junio', hasGoal: true },
   ];
 
   return (
